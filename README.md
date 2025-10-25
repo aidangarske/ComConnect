@@ -43,6 +43,16 @@
 * **Authentication:** Token-based with Firebase Auth or JWT
 * **Integration:** Google Maps API for proximity-based job discovery
 
+## Structure 
+
+| Folder           | Purpose                                                                          |
+| ---------------- | -------------------------------------------------------------------------------- |
+| **client/**      | React frontend — everything users interact with.                                 |
+| **server/**      | Node/Express backend — handles API requests and database logic.                  |
+| **docs/**        | All design documents (SDD, UML, diagrams, etc.) — great for grading and clarity. |
+| **tests/**       | Organized space for unit & integration tests (Jest/Postman).                     |
+| **README.md**    | Explains how to install, run, and contribute to the project.                     |
+
 ---
 
 ## Development Environment
