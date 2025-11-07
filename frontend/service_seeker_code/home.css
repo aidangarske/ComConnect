@@ -1,0 +1,271 @@
+:root{
+  --bg: #f5f6f8;
+  --ink: #111;
+  --brand: rgb(15, 9, 59);
+  --panel: #fff;
+  --muted: #777;
+  --header-h: 72px; /* matches logo + padding */
+  --radius: 14px;
+}
+
+/* Global */
+*{box-sizing:border-box}
+html#page{
+  font-family: 'Urbanist','Futura','Avenir',sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  margin: 0;
+  display: block;
+}
+
+body{margin:0}
+
+a{
+    color: inherit; 
+    text-decoration: none;
+}
+
+/* Header */
+header{
+  position: fixed; /* was absolute; keeps it pinned */
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-h);
+  background-color: white;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+}
+
+#logo{
+  height: 70px;
+  width: 70px;
+
+}
+
+/* Sidebar: Chats */
+#chats{
+  position: fixed; /* was absolute */
+  top: var(--header-h);
+  bottom: 0;
+  left: 0;
+  width: 30%;
+  max-width: 420px;
+  min-width: 280px;
+  background-color: var(--brand);
+  color: #fff;
+  padding: 16px;
+  overflow: auto;
+}
+
+#chats > h2{margin: 0 0 8px 0}
+
+#chats form{
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+#chats label{font-size: 0.9rem;color:#ddd}
+
+input[type="search"]{
+  background-color: var(--brand);
+  border: 1px solid #fff;
+  color: #fff;
+  border-radius: 8px; /* was 5% */
+  padding: 10px 12px;
+}
+
+/* Chat preview cards */
+/* keep compatibility: style both your original #example_* and new classes */
+#example_chat, .chat{
+  position: relative;
+  width: 100%;
+  min-height: 88px;
+  border-radius: 12px;
+  border: 1px solid #fff;
+  text-align: left;
+  display: flex;
+  gap: 10px;
+  margin: 10px 0;
+  padding: 10px 12px;
+  align-items: flex-start;
+}
+
+#example_contact, .contact{display:flex; align-items:center; gap:10px}
+
+#example_photo, .photo{
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background-color: rgb(255,163,163);
+  flex: 0 0 auto;
+}
+
+/* Main area */
+#main{
+  display: block;
+  align-items: center; /* harmless when block */
+  margin-top: var(--header-h);
+  margin-left: 30%; /* makes room for sidebar */
+  padding: 16px;
+}
+/* ===== Dashboard styles only (scoped to #dashboard) ===== */
+
+#dashboard.cc-dashboard{
+  background: #ffffff;
+  border-radius: 22px;
+  padding: 28px;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.04) inset;
+  border: 1px solid #e6e6e8;
+}
+
+/* Hero */
+#dashboard .dash-hero{
+  margin-bottom: 18px;
+}
+#dashboard .dash-hero h1{
+  margin: 0 0 6px 0;
+  font-size: clamp(24px, 3.2vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+#dashboard .dash-sub{
+  margin: 0;
+  font-weight: 700;
+  opacity: .9;
+}
+
+/* Toolbar pills (right-aligned like screenshot) */
+#dashboard .dash-toolbar{
+  display: flex;
+  justify-content: flex-end;
+  margin: 18px 0 22px;
+}
+#dashboard .filter-pills{
+  display: flex;
+  gap: 14px;
+}
+#dashboard .pill{
+  background: #fff;
+  border: 2px solid #d7d7dc;
+  border-radius: 14px;
+  padding: 10px 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* Jobs grid */
+#dashboard .jobs{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+/* Job card look */
+#dashboard .job-card{
+  position: relative;
+  background: #fff;
+  border: 2px solid #d9d9df;
+  border-radius: 22px;
+  padding: 18px 18px 36px;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+}
+
+/* Title + tags */
+#dashboard .job-title{
+  margin: 0 0 8px;
+  font-size: clamp(18px, 2.2vw, 26px);
+  font-weight: 900;
+  line-height: 1.15;
+}
+#dashboard .job-tags{
+  list-style: disc;
+  padding-left: 20px;
+  margin: 0 0 14px 0;
+  font-weight: 800;
+}
+
+/* Avatar + meta row */
+#dashboard .job-meta{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#dashboard .avatar{
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+#dashboard .meta-lines{
+  display: grid;
+  gap: 2px;
+  font-weight: 900;
+}
+#dashboard .time-distance{ opacity: 0.95; }
+#dashboard .handle{ opacity: 0.95; }
+
+/* Timestamp centered under card */
+#dashboard .job-age{
+  text-align: center;
+  font-weight: 900;
+  margin-top: 16px;
+}
+
+/* Price bubble that overlaps the card edge */
+#dashboard .price-badge{
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(40%, -40%);
+  background: #fff;
+  border: 2px solid #d9d9df;
+  border-radius: 999px;
+  width: 60px;
+  height: 60px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+}
+
+/* Responsive: stack cards on smaller screens */
+@media (max-width: 1100px){
+  #dashboard .jobs{ grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 720px){
+  #dashboard .dash-toolbar{ justify-content: flex-start; }
+  #dashboard .jobs{ grid-template-columns: 1fr; }
+  #dashboard .price-badge{
+    transform: translate(20%, -40%);
+    width: 72px; height: 72px;
+  }
+}
+
+
+/* Footer (inside main) */
+footer{
+  position: static; /* remove absolute positioning */
+  margin: 8px 16px 24px;
+  color: var(--muted);
+}
+
+/* Responsive */
+@media (max-width: 900px){
+  #chats{
+    position: static;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    height: auto;
+    border-bottom: 2px solid #222;
+  }
+  #main{
+    margin: 0;
+    padding: 12px;
+  }
+  #dashboard{margin: 12px 0}
+}

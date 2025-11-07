@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en" id="page">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="ComConnect – Service Provider home dashboard for managing chats, jobs, and account." />
+
+    <title>ComConnect · Service Provider Home</title>
+
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="home.css" />
+    <script src="main.js" defer></script>
+  </head>
+
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+
+    <!-- Header (matches your CSS header selector) -->
+    <header role="banner">
+      <div class="container header__inner">
+        <a class="brand" href="home.html" aria-label="ComConnect Home">
+          <img src="../COMCONNECT_Logo.png" id="logo" alt="ComConnect logo" />
+        </a>
+      </div>
+    </header>
+
+    <div class="layout">
+      <!-- SIDEBAR: Chats (keeps your #chats id) -->
+      <aside id="chats" aria-labelledby="messages-title">
+        <h2 id="messages-title">Messages</h2>
+
+        <form role="search" class="chat-search" action="#" method="get">
+          <label for="chat-query">Search chats</label>
+          <input id="chat-query" name="q" type="search" placeholder="Search by name or keyword" />
+        </form>
+
+        <!-- NOTE: IDs must be unique. Keep one #example_chat for styling; use class="chat" for others. -->
+        <div id="example_chat">
+          <div id="example_contact">
+            <img src="../COMCONNECT_Logo.png" id="example_photo" alt="Avatar for user Josh33" />
+            <h4>Josh33</h4>
+          </div>
+          <p>Hey there, I was wondering if I could come in a little later than 3 o'clock, let me know what you think.</p>
+        </div>
+
+        <div class="chat" aria-labelledby="conv-2-name">
+          <div class="contact">
+            <img src="../COMCONNECT_Logo.png" class="photo" alt="Avatar for user Izzy" />
+            <h4 id="conv-2-name">Izzy</h4>
+          </div>
+          <p>Can you still do Thursday morning? I can send gate code.</p>
+        </div>
+      </aside>
+
+      <!-- MAIN: Dashboard (keeps your #main and #dashboard ids) -->
+      <main id="main" tabindex="-1">
+        <!-- DASHBOARD (replace your current #dashboard contents with this) -->
+    <div id="dashboard" class="cc-dashboard">
+        <h1>Provide help where it’s needed.</h1>
+        <p class="dash-sub">Discover nearby jobs that match your skills and schedule.</p>
+
+        <div class="dash-toolbar">
+            <div class="filter-pills" role="toolbar" aria-label="Sort and filter">
+            <button class="pill" type="button">Relevance</button>
+            <button class="pill" type="button">Location</button>
+            <button class="pill" type="button">Price</button>
+            </div>
+        </div>
+
+    <section class="jobs" aria-label="Nearby jobs">
+        <!-- Job 1 -->
+        <a href="">
+        <article class="job-card">
+        <div class="price-badge">~$50</div>
+        <h3 class="job-title">Mount TV to wall</h3>
+        <ul class="job-tags">
+            <li>manual labor</li>
+            <li>home services</li>
+            <li>physical</li>
+        </ul>
+
+        <div class="job-meta">
+            <img class="avatar" src="https://via.placeholder.com/48x48.png" alt="Ralph avatar">
+            <div class="meta-lines">
+            <div class="time-distance">~2hrs | 0.7 miles</div>
+            <div class="handle">@ralphdaboy</div>
+            </div>
+        </div>
+
+        <div class="job-age">3 weeks ago</div>
+        </article>
+    </a>
+
+        <!-- Job 2 -->
+        <a href="">
+        <article class="job-card">
+        <div class="price-badge">~$30</div>
+        <h3 class="job-title">Rebound Basketball</h3>
+        <ul class="job-tags">
+            <li>manual labor</li>
+            <li>physical</li>
+        </ul>
+
+        <div class="job-meta">
+            <img class="avatar" src="https://via.placeholder.com/48x48.png" alt="Andy avatar">
+            <div class="meta-lines">
+            <div class="time-distance">~1hr | 5.6 miles</div>
+            <div class="handle">@andy123</div>
+            </div>
+        </div>
+
+        <div class="job-age">1 month ago</div>
+        </article>
+        </a>
+
+        <!-- Job 3 -->
+        <a href="">
+        <article class="job-card">
+        <div class="price-badge">~$100</div>
+        <h3 class="job-title">Calculus II<br>Tutoring</h3>
+        <ul class="job-tags">
+            <li>tutoring</li>
+        </ul>
+
+        <div class="job-meta">
+            <img class="avatar" src="https://via.placeholder.com/48x48.png" alt="Jessica avatar">
+            <div class="meta-lines">
+            <div class="time-distance">~2hrs | 3.2 miles</div>
+            <div class="handle">@jessicalikesbees</div>
+            </div>
+        </div>
+
+        <div class="job-age">3 months ago</div>
+        </article>
+    </a>
+    </section>
+    </div>
+
+
+        <footer>
+          <p>&copy; <span id="year"></span> ComConnect. All rights reserved.</p>
+        </footer>
+      </main>
+    </div>
+
+    <script>
+      // small helper: set the current year
+      document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+  </body>
+</html>

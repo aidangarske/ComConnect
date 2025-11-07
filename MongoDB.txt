@@ -1,0 +1,4 @@
+MongoDB:
+
+Username: harrisonbarrettnv_db_user
+Password: w6HIH2NgEWnTSBWw
