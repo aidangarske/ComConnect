@@ -12,48 +12,52 @@ import {
   Image,
 } from '@chakra-ui/react'
 
+import comconnectLogo from "../../logo/COMCONNECT_Logo.png";
+
 export default function Login() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
   const handleLogin = () => {
-    // Store user info and navigate to role selection
-    navigate('/role-selection')
+    // Store user info and navigate to proper dashboard NEEDS BACKEND LOGIC
+    navigate('/admin'); // tempoarily navigate to seeker dashboard
   }
 
   return (
     <Box minH="100vh" bg="#0a0e27" display="flex" alignItems="center" justifyContent="center" px={[4, 8]}>
       <HStack spacing={[0, 16, 24]} w="full" maxW="1400px" h="100vh" align="center" justify="center">
         {/* Left Section - Logo */}
-        <VStack spacing={6} flex={[1, 1, 1.2]} align="center" justify="center" py={8}>
-          <Box textAlign="center" w="100%">
-            <Link 
-              _hover={{ opacity: 0.8 }}
-              onClick={() => navigate('/')}
-              cursor="pointer"
-            >
+          <VStack spacing={8} flex={1} align={["center", "flex-start"]} justify="center">
+            <Box textAlign={["center", "left"]}>
               <Image 
-                src="/logo.png" 
+                src={comconnectLogo} 
                 alt="ComConnect" 
-                h={["140px", "180px", "220px"]}
+                h={["120px", "140px", "160px"]}
                 w="auto"
                 objectFit="contain"
-                mx="auto"
-                maxW="100%"
+                mb={4}
+                cursor="pointer"
+                onClick={() => navigate('/')}
               />
-            </Link>
-            </Box>
-          <Text 
-            color="#999" 
-            fontSize={["sm", "md", "lg"]} 
-            textAlign="center" 
-            px={4}
-            maxW="300px"
-            lineHeight="1.6"
-            >
-            Connect with service providers near you
+              <Heading 
+                as="h1" 
+                size={["lg", "2xl", "3xl"]} 
+                color="#d97baa" 
+                fontWeight="bold"
+                mt={4}
+              >
+                ComConnect
+              </Heading>
+              <Text 
+                color="#999" 
+                fontSize={["sm", "md"]} 
+                mt={4}
+                maxW="300px"
+              >
+                Stay connected. Stay verified. Stay ahead.
               </Text>
+            </Box>
           </VStack>
 
           {/* Right Section - Login Form */}
@@ -61,18 +65,8 @@ export default function Login() {
             {/* Header */}
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
             <Heading as="h2" size={["sm", "md"]} color="white">
-              Sign In
+              Login
             </Heading>
-              <Link
-              fontSize="xs"
-                color="#d97baa"
-                fontWeight="bold"
-              onClick={() => navigate('/')}
-              _hover={{ textDecoration: 'underline' }}
-              cursor="pointer"
-              >
-                Home
-              </Link>
             </Box>
 
             {/* Email Input */}
