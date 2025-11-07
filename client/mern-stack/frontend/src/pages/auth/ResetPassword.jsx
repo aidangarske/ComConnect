@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Box, HStack, VStack, Input, Button, Text, Heading } from '@chakra-ui/react'
+import { Box, HStack, VStack, Input, Button, Text, Heading, Image } from '@chakra-ui/react'
+
+import comconnectLogo from "../../logo/COMCONNECT_Logo.png";
 
 export default function ResetPassword() {
   const navigate = useNavigate()
@@ -17,22 +19,36 @@ export default function ResetPassword() {
     <Box minH="100vh" bg="#0a0e27" display="flex" alignItems="center" justifyContent="center" px={[4, 8]}>
       <HStack spacing={[0, 16, 24]} w="full" maxW="1400px" h="100vh" align="center" justify="center">
         {/* Left Section - Logo */}
-        <VStack spacing={6} flex={[1, 1, 1.2]} align="center" justify="center" py={8}>
-          <Box textAlign="center" w="100%" cursor="pointer" onClick={() => navigate('/')}>
-            <Text color="#d97baa" fontSize="2xl" fontWeight="bold">
-              COMCONNECT
+        <VStack spacing={8} flex={1} align={["center", "flex-start"]} justify="center">
+          <Box textAlign={["center", "left"]}>
+            <Image 
+              src={comconnectLogo} 
+              alt="ComConnect" 
+              h={["120px", "140px", "160px"]}
+              w="auto"
+              objectFit="contain"
+              mb={4}
+              cursor="pointer"
+              onClick={() => navigate('/')}
+            />
+            <Heading 
+              as="h1" 
+              size={["lg", "2xl", "3xl"]} 
+              color="#d97baa" 
+              fontWeight="bold"
+              mt={4}
+            >
+              ComConnect
+            </Heading>
+            <Text 
+              color="#999" 
+              fontSize={["sm", "md"]} 
+              mt={4}
+              maxW="300px"
+            >
+              No worries - It happens.
             </Text>
           </Box>
-          <Text 
-            color="#999" 
-            fontSize={["sm", "md", "lg"]} 
-            textAlign="center" 
-            px={4}
-            maxW="300px"
-            lineHeight="1.6"
-          >
-            Reset your password to regain access
-          </Text>
         </VStack>
 
         {/* Right Section - Reset Form */}

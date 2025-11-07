@@ -10,41 +10,19 @@ import {
   Heading,
 } from '@chakra-ui/react'
 
+import comconnectLogo from "../logo/COMCONNECT_Logo.png";
+
 export default function Home() {
   const navigate = useNavigate()
 
   return (
     <Box minH="100vh" bg="#0a0e27" display="flex" alignItems="center" justifyContent="center" px={[4, 8]}>
-      {/* Top Navigation */}
-      <Box position="absolute" top={0} left={0} right={0} p={6} display="flex" justifyContent="space-between" alignItems="center">
-        <HStack spacing={2}>
-          <Image 
-            src="/logo.png" 
-            alt="ComConnect" 
-            h="50px"
-            w="auto"
-            objectFit="contain"
-          />
-        </HStack>
-        <Link
-          fontSize="sm"
-          color="#d97baa"
-          fontWeight="bold"
-          onClick={() => navigate('/login')}
-          _hover={{ textDecoration: 'underline' }}
-          cursor="pointer"
-        >
-          Sign In
-        </Link>
-      </Box>
-
-      {/* Main Content */}
-      <HStack spacing={[0, 12, 20]} w="full" maxW="1400px" align="center" justify="center" py={12}>
-        {/* Left Section - Logo & Branding */}
-        <VStack spacing={8} flex={1} align={["center", "flex-start"]} justify="center">
-          <Box textAlign={["center", "left"]}>
+      <HStack spacing={[0, 16, 24]} w="full" maxW="1400px" h="100vh" align="center" justify="center">
+        {/* Left Section - Logo */}
+          <VStack spacing={8} flex={1} align={["center", "flex-start"]} justify="center">
+            <Box textAlign={["center", "left"]}>
             <Image 
-              src="/logo.png" 
+              src={comconnectLogo} 
               alt="ComConnect" 
               h={["120px", "140px", "160px"]}
               w="auto"
@@ -118,22 +96,9 @@ export default function Home() {
               fontWeight="bold"
               transition="all 0.2s"
             >
-              Sign In
+              Continue
             </Button>
-            <Button
-              flex={1}
-              bg="transparent"
-              color="#d97baa"
-              border="2px solid #d97baa"
-              size={["sm", "md"]}
-              _hover={{ bg: 'rgba(217, 123, 170, 0.1)', transform: 'translateY(-2px)' }}
-              onClick={() => navigate('/register')}
-              borderRadius="md"
-              fontWeight="bold"
-              transition="all 0.2s"
-            >
-              Create Account
-            </Button>
+            
           </HStack>
         </VStack>
       </HStack>

@@ -1,11 +1,15 @@
 import { useNavigate } from 'react-router-dom'
 import { useRole } from '../components/RoleContext'
-import { Box, HStack, VStack, Text, Button, Heading, Input } from '@chakra-ui/react'
+import { Box, HStack, VStack, Text, Button, Heading, Input, Image } from '@chakra-ui/react'
+
+import comconnectLogo from "../logo/COMCONNECT_Logo.png";
 
 export default function Profile() {
   const navigate = useNavigate()
   const { role } = useRole()
-
+  const handleSave = () => {
+    // Implement save functionality here
+  }
   const getDashboardPath = () => {
     switch(role) {
       case 'seeker': return '/dashboard-seeker'
@@ -19,24 +23,22 @@ export default function Profile() {
       {/* Header */}
       <Box bg="#0a0e27" borderBottom="1px solid #1a1f3a" py={4} px={8}>
           <HStack justify="space-between" align="center">
-          <Text 
-            fontWeight="bold" 
-            fontSize="lg" 
-            color="#d97baa"
-            cursor="pointer"
-            onClick={() => navigate('/')}
-          >
-              COMCONNECT
-            </Text>
+            <Image 
+              src={comconnectLogo} 
+              alt="ComConnect" 
+              h={["80px", "80px", "80px"]}
+              w="auto"
+              objectFit="contain"
+              maxW="100%"
+              cursor="pointer"
+              onClick={() => navigate(getDashboardPath())}
+            />
             <HStack spacing={6}>
               <Text color="#d97baa" fontSize="sm" fontWeight="bold" cursor="pointer" onClick={() => navigate('/profile')}>
                 Profile
               </Text>
               <Text color="white" fontSize="sm" cursor="pointer" onClick={() => navigate('/messages')}>
                 Messages
-              </Text>
-              <Text color="white" fontSize="sm" cursor="pointer" onClick={() => navigate(getDashboardPath())}>
-                Dashboard
               </Text>
             </HStack>
         </HStack>
@@ -136,18 +138,29 @@ export default function Profile() {
             <Button
                 flex={1}
                 bg="#d97baa"
-              color="white"
+                color="white"
                 _hover={{ bg: '#c55a8f' }}
                 py={6}
                 borderRadius="md"
                 fontWeight="bold"
                 fontSize="md"
+                onClick={handleSave}
             >
                 Save Changes
             </Button>
             </HStack>
           </VStack>
-                      </VStack>
+        </VStack>
+      </Box>
+      <Box display="flex" justifyContent="flex-end" px={8} mt={4}>
+        <Button
+        colorScheme="pink"
+        variant="outline"
+        size="sm"
+        onClick={() => navigate('/')}
+        >
+          Log Out
+        </Button>
       </Box>
     </Box>
   )
