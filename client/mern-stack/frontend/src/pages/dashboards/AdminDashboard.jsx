@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom'
-import { Box, HStack, VStack, Text, Button, Heading } from '@chakra-ui/react'
+import { Box, HStack, VStack, Text, Button, Heading, Image } from '@chakra-ui/react'
+
+import comconnectLogo from "../../logo/COMCONNECT_Logo.png";
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
@@ -9,24 +11,22 @@ export default function AdminDashboard() {
       {/* Header */}
       <Box bg="#0a0e27" borderBottom="1px solid #1a1f3a" py={4} px={8}>
           <HStack justify="space-between" align="center">
-          <Text 
-            fontWeight="bold" 
-            fontSize="lg" 
-                color="#d97baa"
-            cursor="pointer"
-            onClick={() => navigate('/')}
-          >
-            COMCONNECT ADMIN
-          </Text>
+            <Image 
+              src={comconnectLogo} 
+              alt="ComConnect" 
+              h={["80px", "80px", "80px"]}
+              w="auto"
+              objectFit="contain"
+              maxW="100%"
+              cursor="pointer"
+              onClick={() => navigate(getDashboardPath())}
+            />
           <HStack spacing={6}>
             <Text color="white" fontSize="sm" cursor="pointer" onClick={() => navigate('/profile')}>
               Profile
             </Text>
             <Text color="white" fontSize="sm" cursor="pointer" onClick={() => navigate('/messages')}>
               Messages
-            </Text>
-            <Text color="#d97baa" fontSize="sm" fontWeight="bold" cursor="pointer" onClick={() => navigate('/admin')}>
-              Dashboard
             </Text>
           </HStack>
           </HStack>

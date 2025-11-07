@@ -2,43 +2,64 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Box, VStack, HStack, Input, Button, Text, Heading, Image } from '@chakra-ui/react'
 
+import comconnectLogo from "../../logo/COMCONNECT_Logo.png";
+
+
 export default function Register() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
+  const [roleIsSeeker, setRoleIsSeeker] = useState(false);
 
-  const handleRegister = () => {
-    navigate('/login')
+  const handleRoleSelect = (role) => {
+    setRoleIsSeeker(role === 'seeker');
+  };
+
+const handleRegister = () => {
+  if (roleIsSeeker) {
+    navigate('/dashboard-seeker');
+  } else {
+    navigate('/dashboard-provider');
   }
+};
 
   return (
     <Box minH="100vh" bg="#0a0e27" display="flex" alignItems="center" justifyContent="center" px={[4, 8]}>
       <HStack spacing={[0, 16, 24]} w="full" maxW="1400px" h="100vh" align="center" justify="center">
         {/* Left Section - Logo */}
-        <VStack spacing={6} flex={[1, 1, 1.2]} align="center" justify="center" py={8}>
-          <Box textAlign="center" w="100%" cursor="pointer" onClick={() => navigate('/')}>
+        <VStack spacing={8} flex={1} align={["center", "flex-start"]} justify="center">
+          <Box textAlign={["center", "left"]}>
             <Image 
-              src="/logo.png" 
+              src={comconnectLogo} 
               alt="ComConnect" 
-              h={["140px", "180px", "220px"]}
+              h={["120px", "140px", "160px"]}
               w="auto"
               objectFit="contain"
-              mx="auto"
-              maxW="100%"
+              mb={4}
+              cursor="pointer"
+              onClick={() => navigate('/')}
             />
-            </Box>
-          <Text 
-            color="#999" 
-            fontSize={["sm", "md", "lg"]} 
-            textAlign="center" 
-            px={4}
-            maxW="300px"
-            lineHeight="1.6"
+            <Heading 
+              as="h1" 
+              size={["lg", "2xl", "3xl"]} 
+              color="#d97baa" 
+              fontWeight="bold"
+              mt={4}
             >
-            Join our community and find trusted services
-              </Text>
-          </VStack>
+              ComConnect
+            </Heading>
+            <Text 
+              color="#999" 
+              fontSize={["sm", "md"]} 
+              mt={4}
+              maxW="300px"
+            >
+              Sign up. Get verified. Get connected.
+            </Text>
+          </Box>
+        </VStack>
+
 
           {/* Right Section - Register Form */}
         <VStack spacing={6} flex={1} align="stretch" w={["100%", "100%", "auto"]} maxW="380px" py={8}>
@@ -47,15 +68,6 @@ export default function Register() {
             <Heading as="h2" size={["sm", "md"]} color="white">
               Create Account
             </Heading>
-            <Text
-              fontSize="xs"
-                color="#d97baa"
-                fontWeight="bold"
-                onClick={() => navigate('/')}
-                cursor="pointer"
-              >
-                Home
-            </Text>
             </Box>
 
             {/* Email Input */}
@@ -120,6 +132,37 @@ export default function Register() {
               fontSize="sm"
             />
           </VStack>
+        {/* Role Selection */}
+        <Heading as="h1" size="2xl" color="#d97baa">
+          Select Your Role
+        </Heading>
+          <HStack spacing={4} w="full" mt={2}>
+            <Button
+              w="half"
+              bg="#3a3f5e"
+              color="white"
+              _hover={{ bg: '#4a4f6e' }}
+              py={3}
+              borderRadius="lg"
+              fontSize="md"
+              onClick={() => handleRoleSelect("provider")}
+            >
+              ⭐ Service Provider
+            </Button>
+
+            <Button
+              w="half"
+              bg="#3a3f5e"
+              color="white"
+              _hover={{ bg: '#4a4f6e' }}
+              py={3}
+              borderRadius="lg"
+              fontSize="md"
+              onClick={() => handleRoleSelect("seeker")}
+            >
+              🔍 Service Seeker
+            </Button>
+          </HStack>
 
           {/* Terms Message */}
           <Text fontSize="xs" color="#999" lineHeight="1.4">
@@ -134,7 +177,7 @@ export default function Register() {
             _hover={{ bg: '#c55a8f', transform: 'translateY(-2px)' }}
               onClick={handleRegister}
               py={6}
-              borderRadius="md"
+              borderRadius="lg"
               fontWeight="bold"
               fontSize="md"
             transition="all 0.2s"
@@ -154,7 +197,7 @@ export default function Register() {
               onClick={() => navigate('/login')}
                   cursor="pointer"
                 >
-              Sign In
+              Login
             </Text>
               </HStack>
           </VStack>
