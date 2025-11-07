@@ -1,0 +1,55 @@
+#page{
+    text-align: center;
+    font-family: 'Urbanist', 'Futura', 'Avenir', sans-serif;
+    color: white;
+    font-weight: lighter;
+    background-color:black;
+    margin-top: 10%;
+}
+
+main{
+    margin: 0 auto;
+    text-align: center;
+    max-width: 800px;
+    align-items: center;
+}
+
+h1{
+    font-size: 50px;
+}
+
+h2{
+    font-size: 20px;
+    font-weight: lighter;
+    margin-top: 50px;
+}
+
+img{
+    width: 300px;
+    height: auto;
+    margin-bottom: 20px;
+}
+
+a{
+    color: white;
+}
+
+#continue{
+    font-size: 20px;
+    margin: 20px;
+}
+
+#admin{
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: small;
+}
+
+footer{
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    position: absolute;
+}

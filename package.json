@@ -1,0 +1,33 @@
+{
+  "name": "comconnect",
+  "version": "1.0.0",
+  "description": "**Team:** Harrison Barrett, Damon Bun, Aidan Garske, Jose Garcia, Harjosh Gosal",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "dev": "nodemon backend/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aidangarske/ComConnect.git"
+  },
+  "type": "module",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/aidangarske/ComConnect/issues"
+  },
+  "homepage": "https://github.com/aidangarske/ComConnect#readme",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "mongoose": "^8.19.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
