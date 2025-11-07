@@ -58,15 +58,6 @@ export default function ResetPassword() {
             <Heading as="h2" size={["sm", "md"]} color="white">
               {submitted ? 'Check Your Email' : 'Reset Password'}
             </Heading>
-            <Text
-              fontSize="xs"
-              color="#d97baa"
-              fontWeight="bold"
-              onClick={() => navigate('/')}
-              cursor="pointer"
-            >
-              Home
-            </Text>
           </Box>
 
           {!submitted ? (
