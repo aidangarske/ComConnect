@@ -50,15 +50,6 @@ export default function ServiceSeekerDashboard() {
         {/* Search and Filters */}
           <HStack spacing={4} w="full" justify="space-between">
             <HStack spacing={2} flex={1}>
-          <Input
-                placeholder="Search providers..."
-            bg="#1a1f3a"
-            border="1px solid #3a4456"
-            borderRadius="md"
-            color="white"
-            _placeholder={{ color: '#666' }}
-            _focus={{ borderColor: '#d97baa' }}
-          />
             {['Relevance', 'Location', 'Price', 'Rating'].map((filter) => (
               <Button
                 key={filter}
