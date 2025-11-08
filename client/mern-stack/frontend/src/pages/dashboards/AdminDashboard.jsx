@@ -7,9 +7,9 @@ export default function AdminDashboard() {
   const navigate = useNavigate()
 
   return (
-    <Box minH="100vh" bg="#0f0f0f">
+    <Box minH="100vh" bg="#0a0e27">
       {/* Header */}
-      <Box bg="#0a0e27" borderBottom="1px solid #1a1f3a" py={4} px={8}>
+      <Box bg="white" borderBottom="1px solid #1a1f3a" py={4} px={8}>
           <HStack justify="space-between" align="center">
             <Image 
               src={comconnectLogo} 
@@ -22,10 +22,10 @@ export default function AdminDashboard() {
               onClick={() => navigate(getDashboardPath())}
             />
           <HStack spacing={6}>
-            <Text color="white" fontSize="sm" cursor="pointer" onClick={() => navigate('/profile')}>
+            <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/profile')}>
               Profile
             </Text>
-            <Text color="white" fontSize="sm" cursor="pointer" onClick={() => navigate('/messages')}>
+            <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/messages')}>
               Messages
             </Text>
           </HStack>
