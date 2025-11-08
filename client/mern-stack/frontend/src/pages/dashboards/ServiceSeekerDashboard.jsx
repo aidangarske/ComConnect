@@ -92,6 +92,18 @@ export default function ServiceSeekerDashboard() {
                 {filter}
               </Button>
             ))}
+            <Button
+              ml="auto"
+              alignSelf="flex-start"
+              size="sm"
+              bg="#ff6b81"
+              color="white"
+              border="1px solid rgba(255,255,255,0.12)"
+              _hover={{ bg: "#ff4f6f" }}
+              onClick={() => alert('Posting a job...')}
+            >
+              Post Job
+            </Button>
           </HStack>
         </HStack>
         <VStack align="center">
