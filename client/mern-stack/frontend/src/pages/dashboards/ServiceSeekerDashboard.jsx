@@ -1,17 +1,45 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Box, HStack, VStack, Text, Button, Heading, Input, Image } from '@chakra-ui/react'
+import { Box, HStack, VStack, Text, Button, Heading, Image, Wrap, WrapItem } from '@chakra-ui/react'
 
 import comconnectLogo from "../../logo/COMCONNECT_Logo.png";
+
+import exampleProfilepic from "../../profile_picture/OIP.jpg";
+
+function generateUserDiv(){
+  return(     
+    <Box
+      m="20px"
+      bg="linear-gradient(135deg, rgba(255, 255, 255, 0.15) 100%, rgba(248, 63, 125, 0.1) 50%)"
+      border="2px solid #d97baa"
+      borderRadius="2xl"
+      p={[6, 8]}
+      backdropFilter="blur(10px)"
+      width="300px"
+      height="350px"
+      cursor="pointer"
+      onClick={() => alert('User Selected')}
+    >
+      <Text position="absolute" fontSize="xl" left="5px" top="5px" color="white">@theBoy10</Text>
+      <Text position="absolute" fontSize="xl" right="5px" top="5px" color="white">4.7⭐</Text>
+      <Image position="absolute" borderRadius="50%" boxSize="100px" top="25%" left="50%" transform="translate(-50%, -50%)" src={exampleProfilepic} alt="Profile Picture" />
+      <Text position="absolute" fontSize="25px" left="50%" top="50%" color="white" transform="translate(-50%, -50%)">John Pork</Text>
+      <Text position="absolute" fontSize="md" left="50%" top="65%" color="white" transform="translate(-50%, -50%)">- Manual Labor</Text>
+      <Text position="absolute" fontSize="md" left="50%" top="72%" color="white" transform="translate(-50%, -50%)">- Tutoring</Text>
+      <Text position="absolute" fontSize="md" left="50%" top="79%" color="white" transform="translate(-50%, -50%)">- Painting</Text>
+      <Text position="absolute" fontSize="sm" left="50%" transform="translate(-50%, -50%)" bottom="5px" color="white">📍2.7 miles</Text>
+    </Box>
+    );
+}
 
 export default function ServiceSeekerDashboard() {
   const navigate = useNavigate()
   const [filterType, setFilterType] = useState('Relevance')
 
   return (
-    <Box minH="100vh" bg="#0f0f0f">
+    <Box minH="100vh" bg="#0a0e27">
       {/* Header */}
-      <Box bg="#0a0e27" borderBottom="1px solid #1a1f3a" py={4} px={8}>
+      <Box bg="white" borderBottom="1px solid #1a1f3a" py={4} px={8}>
           <HStack justify="space-between" align="center">
             <Image 
               src={comconnectLogo} 
@@ -24,10 +52,10 @@ export default function ServiceSeekerDashboard() {
               onClick={() => navigate(getDashboardPath())}
             />
             <HStack spacing={6}>
-              <Text color="white" fontSize="sm" cursor="pointer" onClick={() => navigate('/profile')}>
+              <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/profile')}>
                 Profile
               </Text>
-              <Text color="white" fontSize="sm" cursor="pointer" onClick={() => navigate('/messages')}>
+              <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/messages')}>
                 Messages
               </Text>
             </HStack>
@@ -65,8 +93,20 @@ export default function ServiceSeekerDashboard() {
               </Button>
             ))}
           </HStack>
-                    </HStack>
-                  </VStack>
+        </HStack>
+        <VStack align="center">
+          <Wrap spacingX="80px" spacingY="60px" justify="center" align="center">
+            <WrapItem>{generateUserDiv()}</WrapItem>
+            <WrapItem>{generateUserDiv()}</WrapItem>
+            <WrapItem>{generateUserDiv()}</WrapItem>
+            <WrapItem>{generateUserDiv()}</WrapItem>
+            <WrapItem>{generateUserDiv()}</WrapItem>
+            <WrapItem>{generateUserDiv()}</WrapItem>
+            <WrapItem>{generateUserDiv()}</WrapItem>
+            <WrapItem>{generateUserDiv()}</WrapItem>
+          </Wrap>
+        </VStack>
+      </VStack>
       </Box>
     </Box>
   )
