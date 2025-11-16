@@ -1,59 +1,39 @@
 import { useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { Box, HStack, VStack, Text, Button, Heading, Image } from '@chakra-ui/react';
-import comconnectLogo from "../../logo/COMCONNECT_Logo.png"; // Make sure this path is correct
+import comconnectLogo from "../../logo/COMCONNECT_Logo.png"; 
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const location = useLocation(); // Gets current browser location
+  const location = useLocation(); 
 
-  // Helper function to check if a navigation path is active
   const isActive = (path) => location.pathname === path;
 
   return (
     <Box minH="100vh" bg="#0a0e27">
-      {/* --- 1. IMPROVED HEADER --- */}
       <Box bg="white" borderBottom="1px solid #1a1f3a" py={4} px={8}>
-        <HStack justify="space-between" align="center">
-          
-          {/* Logo and Title are grouped on the left */}
-          <HStack spacing={4} align="center" onClick={() => navigate('/')} cursor="pointer">
-            <Image 
-              src={comconnectLogo} 
-              alt="ComConnect" 
-              h="40px" // Smaller, cleaner logo size
-            />
-            <Heading as="h1" size="lg" color="black" letterSpacing="tight">
-              ComConnect
-            </Heading>
-          </HStack>
+              <HStack justify="space-between" align="center">
+                <Image 
+                  src={comconnectLogo} 
+                  alt="ComConnect" 
+                  h={["80px", "80px", "80px"]}
+                  w="auto"
+                  objectFit="contain"
+                  maxW="100%"
+                  cursor="pointer"
+                  onClick={() => navigate(getDashboardPath())}
+                />
+    
+                <HStack spacing={6}>
+                  <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/profile')}>
+                    Profile
+                  </Text>
+                  <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/messages')}>
+                    Messages
+                  </Text>
+                </HStack>
+              </HStack>
+          </Box>
 
-          {/* Profile links are on the right */}
-          <HStack spacing={6}>
-            <Text 
-              color="gray.600" 
-              fontSize="md" 
-              fontWeight="medium" 
-              cursor="pointer"
-              _hover={{ color: 'black' }}
-              onClick={() => navigate('/profile')}
-            >
-              Profile
-            </Text>
-            <Text 
-              color="gray.600" 
-              fontSize="md" 
-              fontWeight="medium" 
-              cursor="pointer"
-              _hover={{ color: 'black' }}
-              onClick={() => navigate('/messages')}
-            >
-              Messages
-            </Text>
-          </HStack>
-        </HStack>
-      </Box>
-
-      {/* --- 2. MAIN CONTENT AREA --- */}
       <Box py={8} px={8}>
         <VStack align="start" spacing={8} w="full">
           {/* Dashboard Title */}
@@ -110,8 +90,6 @@ export default function AdminDashboard() {
               </Button>
             </HStack>
           </Box>
-
-          {/* This Outlet renders your sub-pages */}
           <Box w="full" pt={4}>
             <Outlet />
           </Box>
