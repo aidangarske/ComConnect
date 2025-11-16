@@ -41,8 +41,6 @@ export const mockUsers = [
   },
 ];
 
-
-// --- 2. Mock Data for ReportsView.jsx ---
 export const mockReportsData = {
   keyMetrics: {
     totalUsers: 1320,
@@ -61,8 +59,6 @@ export const mockReportsData = {
   ]
 };
 
-
-// --- 3. Mock Data for AdminSettings.jsx ---
 export const mockSettingsData = {
   siteName: "ComConnect",
   maintenanceMode: false,
@@ -139,3 +135,46 @@ export const mockTickets = [
     message: 'The provider did not deliver what was promised.'
   },
 ];
+
+export const myUserId = 'u5'; 
+
+export const mockConversations = [
+  {
+    id: 'c1',
+    userId: 'u1',
+    userName: 'Alice Johnson',
+    lastMessage: 'My payment for service s3 failed but...',
+    timestamp: '2025-11-15T09:30:00Z',
+  },
+  {
+    id: 'c2',
+    userId: 'u3',
+    userName: 'Charlie Brown',
+    lastMessage: 'I try to reset my password but I am...',
+    timestamp: '2025-11-14T11:00:00Z',
+  },
+  {
+    id: 'c3',
+    userId: 'u2',
+    userName: 'Bob Smith',
+    lastMessage: 'Sounds good, thanks!',
+    timestamp: '2025-11-13T17:00:00Z',
+  },
+];
+
+export const mockMessages = {
+  c1: [
+    { id: 'm1', senderId: 'u1', text: 'My payment for service s3 failed but my card was charged. Please help.' },
+    { id: 'm2', senderId: 'u5', text: 'Hi Alice, I am looking into this for you right now. Can you confirm the last 4 digits of your card?' },
+  ],
+  c2: [
+    { id: 'm3', senderId: 'u3', text: 'I try to reset my password but I am not getting the email.' },
+    { id: 'm4', senderId: 'u3', text: 'Can you manually reset it for me?' },
+    { id: 'm5', senderId: 'u5', text: 'Hi Charlie, I see you are on the "banned" list, which is why your password reset is failing. I am escalating this to the moderation team.' },
+  ],
+  c3: [
+    { id: 'm6', senderId: 'u2', text: 'The new service listing is ready for approval.' },
+    { id: 'm7', senderId: 'u5', text: 'Great, I will approve it now.' },
+    { id: 'm8', senderId: 'u2', text: 'Sounds good, thanks!' },
+  ],
+};
