@@ -56,17 +56,6 @@ The backend needs MongoDB connection details in `.env` file.
 - Just run `npm run dev`
 - ✅ Works immediately!
 
-**If you're setting up FRESH:**
-
-1. Create MongoDB Atlas account: https://www.mongodb.com/cloud/atlas
-2. Create a cluster (free tier available)
-3. Get connection string from: Databases → Connect → Drivers → Node.js
-4. In `server/.env`, add:
-   ```
-   MONGODB_URI=mongodb+srv://USERNAME:PASSWORD@cluster.mongodb.net/comconnect
-   ```
-5. Replace USERNAME and PASSWORD with your database credentials (NOT your account email)
-
 **"npm modules not found"**
 ```bash
 cd server && npm install
