@@ -15,14 +15,24 @@ const router = express.Router();
  */
 router.get('/profile', authenticate, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.id).select('-password');
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
     res.status(200).json({
-      success: true,
-      user: user.getPublicProfile()
+      id: user._id,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      fullName: `${user.firstName} ${user.lastName}`.trim(),
+      bio: user.bio,
+      phone: user.phone,
+      specialties: user.specialties,
+      rating: user.rating,
+      profilePicture: user.profilePicture
     });
   } catch (error) {
     res.status(500).json({ error: 'Error fetching profile: ' + error.message });
@@ -35,7 +45,7 @@ router.get('/profile', authenticate, async (req, res) => {
  */
 router.put('/profile', authenticate, async (req, res) => {
   try {
-    const { firstName, lastName, bio, phone, specialties, hourlyRate, experience } = req.body;
+    const { fullName, email, bio, phone, specialties } = req.body;
 
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -43,14 +53,15 @@ router.put('/profile', authenticate, async (req, res) => {
     }
 
     // Update allowed fields
-    if (firstName) user.firstName = firstName;
-    if (lastName) user.lastName = lastName;
+    if (fullName) {
+      const nameParts = fullName.split(' ');
+      user.firstName = nameParts[0] || '';
+      user.lastName = nameParts.slice(1).join(' ') || '';
+    }
     if (bio) user.bio = bio;
     if (phone) user.phone = phone;
-    if (user.role === 'provider') {
-      if (specialties) user.specialties = specialties;
-      if (hourlyRate) user.hourlyRate = hourlyRate;
-      if (experience) user.experience = experience;
+    if (user.role === 'provider' && specialties) {
+      user.specialties = Array.isArray(specialties) ? specialties : [specialties];
     }
 
     await user.save();
@@ -58,7 +69,17 @@ router.put('/profile', authenticate, async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
-      user: user.getPublicProfile()
+      id: user._id,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      fullName: `${user.firstName} ${user.lastName}`.trim(),
+      bio: user.bio,
+      phone: user.phone,
+      specialties: user.specialties,
+      rating: user.rating
     });
   } catch (error) {
     res.status(500).json({ error: 'Error updating profile: ' + error.message });

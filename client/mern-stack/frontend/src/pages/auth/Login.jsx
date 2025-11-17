@@ -171,7 +171,7 @@ export default function Login() {
             {/* Login Button */}
             <Button
               w="full"
-              bg="#d97baa"
+            bg="#d97baa"
               color="white"
               isDisabled={loading}
               _hover={!loading ? { bg: '#c55a8f', transform: 'translateY(-2px)' } : {}}
@@ -180,8 +180,8 @@ export default function Login() {
               borderRadius="md"
               fontWeight="bold"
               fontSize="md"
-              transition="all 0.2s"
-              mt={4}
+            transition="all 0.2s"
+            mt={4}
               cursor={loading ? 'not-allowed' : 'pointer'}
             >
               {loading ? 'Logging in...' : 'Login'}
