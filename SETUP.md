@@ -49,11 +49,28 @@ Admin Account:
 
 ### Backend Requirements
 
-The backend needs MongoDB connection details in `.env` file.
+**⚠️ IMPORTANT: `.env` files are NOT in git (for security). Each developer must create their own!**
+
+1. **Copy the template:**
+   ```bash
+   cd server
+   cp .env.example .env
+   ```
+   the .env.sample should work tho just simply rename it to .env
+
+2. **Edit `.env` with your MongoDB credentials:**
+   - The `.env.example` file has the shared MongoDB connection string
+   - Just copy it to `.env` and it should work!
+
+3. **Verify it works:**
+   ```bash
+   npm run dev
+   ```
+   You should see: `✅ MongoDB Connected Successfully!`
 
 **If you're using the EXISTING MongoDB:**
-- The `.env` file already has credentials
-- Just run `npm run dev`
+- The `.env.example` already has the correct credentials
+- Just copy it: `cp .env.example .env`
 - ✅ Works immediately!
 
 **"npm modules not found"**

@@ -22,12 +22,19 @@ Runs on `http://localhost:8080`
 
 ## Environment Variables
 
-Create `.env` in server directory:
+1. Copy the template:
+   ```bash
+   cp .env.example .env
+   ```
 
+2. The `.env.example` file already has the correct MongoDB connection string you can use that
+
+Your `.env` should contain something like this:
 ```
-MONGODB_URI=your_connection_string
+MONGODB_URI=mongodb+srv://comconnectuser:comconnectuser@comconnect.q7ikbko.mongodb.net/comconnect
 PORT=8080
-JWT_SECRET=your_secret_key
+NODE_ENV=development
+JWT_SECRET=comconnect-super-secret-key-change-this-in-production-please-make-it-longer-for-security
 JWT_EXPIRE=24h
 ```
 
