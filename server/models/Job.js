@@ -71,7 +71,10 @@ const jobSchema = new mongoose.Schema(
         enum: ['Point'],
         default: 'Point'
       },
-      coordinates: [Number] // [longitude, latitude]
+      coordinates: {
+        type: [Number], // [longitude, latitude]
+        default: [0, 0]
+      }
     },
     address: String,
     city: String,
