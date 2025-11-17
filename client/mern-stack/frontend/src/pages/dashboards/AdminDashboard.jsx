@@ -8,6 +8,11 @@ export default function AdminDashboard() {
 
   const isActive = (path) => location.pathname === path;
 
+  // Navigate to home when logo is clicked
+  const handleLogoClick = () => {
+    navigate('/');
+  };
+
   return (
     <Box minH="100vh" bg="#0a0e27">
       <Box bg="white" borderBottom="1px solid #1a1f3a" py={4} px={8}>
@@ -20,7 +25,7 @@ export default function AdminDashboard() {
                   objectFit="contain"
                   maxW="100%"
                   cursor="pointer"
-                  onClick={() => navigate(getDashboardPath())}
+                  onClick={handleLogoClick}
                 />
     
                 <HStack spacing={6}>

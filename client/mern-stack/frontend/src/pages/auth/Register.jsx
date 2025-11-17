@@ -1,26 +1,78 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useRole } from '../../components/RoleContext'
 import { Box, VStack, HStack, Input, Button, Text, Heading, Image } from '@chakra-ui/react'
 
 import comconnectLogo from "../../logo/COMCONNECT_Logo.png";
 
+const API_URL = 'http://localhost:8080/api';
 
 export default function Register() {
   const navigate = useNavigate()
+  const { setRole } = useRole()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
-  const [roleIsSeeker, setRoleIsSeeker] = useState(false);
+  const [roleIsSeeker, setRoleIsSeeker] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const handleRoleSelect = (role) => {
     setRoleIsSeeker(role === 'seeker');
   };
 
-const handleRegister = () => {
-  if (roleIsSeeker) {
-    navigate('/dashboard-seeker');
-  } else {
-    navigate('/dashboard-provider');
+const handleRegister = async () => {
+  // Validate inputs
+  if (!email || !password || !username) {
+    setError('Please fill in all fields');
+    return;
+  }
+
+  setLoading(true);
+  setError('');
+
+  try {
+    // Select the role based on button click
+    const selectedRole = roleIsSeeker ? 'seeker' : 'provider';
+    
+    // Register the user using backend API
+    const response = await fetch(`${API_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        password,
+        username,
+        role: selectedRole
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      setError(data.error || 'Registration failed');
+      setLoading(false);
+      return;
+    }
+
+    // Save token and role
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('userRole', selectedRole);
+    
+    // Set the role in context
+    setRole(selectedRole);
+    
+    // Navigate to the appropriate dashboard
+    if (roleIsSeeker) {
+      navigate('/dashboard-seeker');
+    } else {
+      navigate('/dashboard-provider');
+    }
+  } catch (err) {
+    setError('Connection error. Make sure backend is running.');
+    console.error('Register error:', err);
+  } finally {
+    setLoading(false);
   }
 };
 
@@ -164,6 +216,13 @@ const handleRegister = () => {
             </Button>
           </HStack>
 
+          {/* Error Message */}
+          {error && (
+            <Text color="red.400" fontSize="sm" fontWeight="bold">
+              {error}
+            </Text>
+          )}
+
           {/* Terms Message */}
           <Text fontSize="xs" color="#999" lineHeight="1.4">
             By creating an account, you accept our Terms and Conditions
@@ -176,6 +235,7 @@ const handleRegister = () => {
               color="white"
             _hover={{ bg: '#c55a8f', transform: 'translateY(-2px)' }}
               onClick={handleRegister}
+              isDisabled={loading}
               py={6}
               borderRadius="lg"
               fontWeight="bold"
@@ -183,7 +243,7 @@ const handleRegister = () => {
             transition="all 0.2s"
             mt={4}
             >
-            Create Account
+            {loading ? 'Creating Account...' : 'Create Account'}
             </Button>
 
             {/* Footer Links */}
