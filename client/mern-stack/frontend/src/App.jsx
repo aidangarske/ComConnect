@@ -8,6 +8,7 @@ import ServiceSeekerDashboard from './pages/dashboards/ServiceSeekerDashboard'
 import ServiceProviderDashboard from './pages/dashboards/ServiceProviderDashboard'
 import Profile from './pages/Profile'
 import Messages from './pages/Messages'
+import CreateJob from './pages/CreateJob'
 import AdminDashboard from './pages/dashboards/AdminDashboard'
 import AdminSettings from './pages/admin/AdminSettings' 
 import ReportsView from './pages/admin/ReportsView'
@@ -28,6 +29,7 @@ function App() {
         <Route path="/dashboard-provider" element={<ServiceProviderDashboard />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/messages" element={<Messages />} />
+        <Route path="/create-job" element={<CreateJob />} />
 
         <Route path="/admin" element={<AdminDashboard />}>
           <Route path="users" element={<UserManagement />} />

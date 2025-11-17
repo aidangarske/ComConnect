@@ -18,25 +18,25 @@ router.post('/', authenticate, authorize('seeker', 'admin'), async (req, res) =>
   try {
     const { title, description, category, budget, budgetType, deadline, estimatedDuration, address, city } = req.body;
 
-    // Validate required fields
-    if (!title || !description || !category || !budget || !deadline || !estimatedDuration) {
+    // Validate required fields - only title, description, and budget are required
+    if (!title || !description || !budget) {
       return res.status(400).json({ error: 'Please provide all required fields' });
     }
 
     // Get poster info
     const user = await User.findById(req.user.id);
 
-    // Create new job
-    const newJob = new Job({
-      title,
-      description,
-      category,
-      budget,
-      budgetType,
-      deadline,
-      estimatedDuration,
-      address,
-      city,
+        // Create new job
+        const newJob = new Job({
+          title,
+          description,
+          category: category || 'other',
+          budget: parseFloat(budget),
+      budgetType: budgetType || 'fixed',
+      deadline: deadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      estimatedDuration: estimatedDuration || '1-2 weeks',
+      address: address || '',
+      city: city || '',
       postedBy: req.user.id,
       posterName: `${user.firstName} ${user.lastName}`.trim() || user.username,
       posterRating: user.rating
@@ -241,6 +241,37 @@ router.get('/user/:userId', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: 'Error fetching user jobs: ' + error.message });
+  }
+});
+
+/**
+ * DELETE /api/jobs/:id
+ * Delete a job (only job poster can delete)
+ */
+router.delete('/:id', authenticate, async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.id);
+    
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    // Verify user is the job poster
+    // Handle both cases: postedBy as object (_id property) or string
+    const jobPosterId = typeof job.postedBy === 'object' ? job.postedBy._id : job.postedBy;
+    if (jobPosterId.toString() !== req.user.id.toString()) {
+      return res.status(403).json({ error: 'You do not have permission to delete this job' });
+    }
+
+    // Delete the job
+    await Job.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Job deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Error deleting job: ' + error.message });
   }
 });
 
