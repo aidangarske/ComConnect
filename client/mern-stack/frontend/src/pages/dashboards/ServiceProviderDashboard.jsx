@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Box, HStack, VStack, Text, Button, Heading, Image, Wrap, WrapItem, Badge } from '@chakra-ui/react'
 import { useRole } from '../../components/RoleContext'
 
 import comconnectLogo from "../../logo/COMCONNECT_Logo.png";
 import exampleProfilepic from "../../profile_picture/OIP.jpg";
+
+const API_URL = 'http://localhost:8080/api';
 
 /**
  * Mock job postings data - sample jobs that service providers can apply to
@@ -114,8 +116,16 @@ const mockJobs = [
  * JobCard Component - displays individual job posting in a beautiful card format
  * Shows job title, price, person posting it, their profile, rating, and apply button
  * Includes hover effect (lifts up with shadow) for better interactivity
+ * Handles both mock jobs and real API jobs
  */
 function JobCard({ job, onApply }) {
+  // Handle both mock and real job data
+  const title = job.title || 'Untitled Job'
+  const price = job.price || job.budget || 0
+  const rating = job.rating || job.posterRating || 0
+  const name = job.name || job.posterName || 'Unknown'
+  const poster = job.poster || `@${job.posterName?.toLowerCase().replace(' ', '') || 'user'}`
+  
   return (
     <Box
       m="20px"
@@ -142,13 +152,13 @@ function JobCard({ job, onApply }) {
         color="white"
         maxW="260px"
       >
-        {job.title}
+        {title}
       </Text>
 
       {/* Price and person's rating - shows what they're paying and how good the poster is */}
       <HStack position="absolute" right="20px" top="20px" spacing={4}>
-        <Text fontSize="lg" fontWeight="bold" color="#d97baa">${job.price}</Text>
-        <Text fontSize="sm" color="white">{job.rating}⭐</Text>
+        <Text fontSize="lg" fontWeight="bold" color="#d97baa">${price}</Text>
+        <Text fontSize="sm" color="white">{rating}⭐</Text>
       </HStack>
 
       {/* Circular profile picture of the person posting the job */}
@@ -159,7 +169,7 @@ function JobCard({ job, onApply }) {
         top="80px" 
         left="50%" 
         transform="translateX(-50%)" 
-        src={job.image} 
+        src={job.image || exampleProfilepic} 
         alt="Profile" 
       />
 
@@ -173,7 +183,7 @@ function JobCard({ job, onApply }) {
         color="white" 
         transform="translateX(-50%)"
       >
-        {job.name}
+        {name}
       </Text>
 
       {/* Username handle of the job poster */}
@@ -186,7 +196,7 @@ function JobCard({ job, onApply }) {
         transform="translateX(-50%)"
         fontWeight="600"
       >
-        {job.poster}
+        {poster}
       </Text>
 
       {/* Bottom section: Job category badge, distance, and time estimate */}
@@ -231,8 +241,33 @@ function JobCard({ job, onApply }) {
 export default function ServiceProviderDashboard() {
   const navigate = useNavigate()
   const { role } = useRole()
-  const [filterType, setFilterType] = useState('Relevance') // Tracks which filter button is active
-  const [filteredJobs, setFilteredJobs] = useState(mockJobs) // Stores sorted jobs
+  const [filterType, setFilterType] = useState('Relevance')
+  const [filteredJobs, setFilteredJobs] = useState([])
+  const [realJobs, setRealJobs] = useState([])
+  const [loading, setLoading] = useState(false)
+
+  // Fetch real jobs on mount
+  useEffect(() => {
+    fetchJobs()
+  }, [])
+
+  const fetchJobs = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch(`${API_URL}/jobs`)
+      const data = await response.json()
+      if (response.ok && data.jobs) {
+        setRealJobs(data.jobs)
+        setFilteredJobs(data.jobs)
+      }
+    } catch (err) {
+      console.error('Failed to fetch jobs:', err)
+      // Fall back to mock jobs if API fails
+      setFilteredJobs(mockJobs)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Returns the correct dashboard path based on user role
   const getDashboardPath = () => {
@@ -249,16 +284,16 @@ export default function ServiceProviderDashboard() {
    */
   const handleFilterChange = (filter) => {
     setFilterType(filter)
-    let sorted = [...mockJobs]
+    let sorted = [...realJobs]
     switch(filter) {
       case 'Price':
-        sorted.sort((a, b) => a.price - b.price)
+        sorted.sort((a, b) => a.budget - b.budget)
         break
       case 'Location':
-        sorted.sort((a, b) => a.distance - b.distance)
+        sorted.sort((a, b) => (a.distance || 0) - (b.distance || 0))
         break
       case 'Rating':
-        sorted.sort((a, b) => b.rating - a.rating)
+        sorted.sort((a, b) => (b.posterRating || 0) - (a.posterRating || 0))
         break
       default:
         // 'Relevance' - keep original order
