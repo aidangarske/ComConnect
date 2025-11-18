@@ -393,7 +393,7 @@ export default function ServiceSeekerDashboard() {
       {/* Header - White background with logo and navigation links */}
       <Box bg="white" borderBottom="1px solid #1a1f3a" py={4} px={8}>
           <HStack justify="space-between" align="center">
-            {/* Logo - clicking goes to home page */}
+            {/* Logo */}
             <Image 
               src={comconnectLogo} 
               alt="ComConnect" 
@@ -402,7 +402,7 @@ export default function ServiceSeekerDashboard() {
               objectFit="contain"
               maxW="100%"
               cursor="pointer"
-              onClick={() => navigate('/')}
+              onClick={() => window.location.reload()}
             />
             {/* Navigation links on the right */}
             <HStack spacing={6}>
