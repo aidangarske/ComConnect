@@ -321,7 +321,7 @@ export default function ServiceProviderDashboard() {
               objectFit="contain"
               maxW="100%"
               cursor="pointer"
-              onClick={() => navigate('/')}
+              onClick={() => window.location.reload()}
             />
 
             {/* Navigation links on the right */}
