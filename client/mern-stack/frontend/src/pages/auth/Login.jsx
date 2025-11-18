@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useRole } from '../../components/RoleContext'
 import {
   Box,
   VStack,
@@ -14,14 +15,63 @@ import {
 
 import comconnectLogo from "../../logo/COMCONNECT_Logo.png";
 
+const API_URL = 'http://localhost:8080/api';
+
 export default function Login() {
   const navigate = useNavigate()
+  const { setRole } = useRole()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleLogin = () => {
-    // Store user info and navigate to proper dashboard NEEDS BACKEND LOGIC
-    navigate('/admin'); // tempoarily navigate to seeker dashboard
+  const handleLogin = async () => {
+    // Validate inputs
+    if (!email || !password) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      // Call backend login API
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Login failed');
+        setLoading(false);
+        return;
+      }
+
+      // Save token to localStorage
+      localStorage.setItem('token', data.token);
+      
+      // Set role in context (saves to localStorage automatically)
+      const userRole = data.user.role;
+      setRole(userRole);
+
+      // Navigate to correct dashboard based on role
+      if (userRole === 'seeker') {
+        navigate('/dashboard-seeker');
+      } else if (userRole === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard-provider');
+      }
+    } catch (err) {
+      setError('Connection error. Make sure backend is running.');
+      console.error('Login error:', err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -68,6 +118,13 @@ export default function Login() {
               Login
             </Heading>
             </Box>
+
+            {/* Error Message */}
+            {error && (
+              <Box bg="red.900" color="red.200" p={3} borderRadius="md" w="full">
+                <Text fontSize="sm">{error}</Text>
+              </Box>
+            )}
 
             {/* Email Input */}
             <VStack align="start" w="full" spacing={2}>
@@ -116,7 +173,8 @@ export default function Login() {
               w="full"
             bg="#d97baa"
               color="white"
-            _hover={{ bg: '#c55a8f', transform: 'translateY(-2px)' }}
+              isDisabled={loading}
+              _hover={!loading ? { bg: '#c55a8f', transform: 'translateY(-2px)' } : {}}
               onClick={handleLogin}
               py={6}
               borderRadius="md"
@@ -124,8 +182,9 @@ export default function Login() {
               fontSize="md"
             transition="all 0.2s"
             mt={4}
+              cursor={loading ? 'not-allowed' : 'pointer'}
             >
-              Login
+              {loading ? 'Logging in...' : 'Login'}
             </Button>
 
             {/* Footer Links */}

@@ -1,9 +1,26 @@
-import { createContext, useState, useContext } from 'react'
+import { createContext, useState, useContext, useEffect } from 'react'
 
 const RoleContext = createContext()
 
 export function RoleProvider({ children }) {
-  const [role, setRole] = useState('provider') // default to provider
+  // Initialize role from localStorage, or default to 'provider' if not set
+  const [role, setRole] = useState(() => {
+    try {
+      const savedRole = localStorage.getItem('userRole')
+      return savedRole || 'provider'
+    } catch (e) {
+      return 'provider'
+    }
+  })
+
+  // Persist role to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('userRole', role)
+    } catch (e) {
+      console.error('Failed to save role to localStorage:', e)
+    }
+  }, [role])
 
   return (
     <RoleContext.Provider value={{ role, setRole }}>
