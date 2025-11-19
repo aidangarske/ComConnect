@@ -3,10 +3,10 @@
  * Handles JWT token verification and user authentication
  */
 
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 
 // Verify JWT token
-const verifyToken = (token) => {
+export const verifyToken = (token) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_jwt_key_change_this_in_production_make_it_very_long');
     return decoded;
@@ -16,7 +16,7 @@ const verifyToken = (token) => {
 };
 
 // Middleware to authenticate requests
-const authenticate = (req, res, next) => {
+export const authenticate = (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
     
@@ -37,8 +37,7 @@ const authenticate = (req, res, next) => {
   }
 };
 
-// Middleware to check role
-const authorize = (...roles) => {
+export const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -50,11 +49,5 @@ const authorize = (...roles) => {
 
     next();
   };
-};
-
-module.exports = {
-  authenticate,
-  authorize,
-  verifyToken
 };
 

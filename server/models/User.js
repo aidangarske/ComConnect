@@ -4,8 +4,8 @@
  * Can be a Service Provider, Service Seeker, or Admin
  */
 
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema(
   {
@@ -44,7 +44,7 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       enum: ['provider', 'seeker', 'admin'],
-      default: 'provider',
+      default: 'seeker', // <-- Adjusted default role from 'provider' to 'seeker' (if applicable)
       required: true
     },
 
@@ -138,8 +138,7 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Create geospatial index for location-based queries
-userSchema.index({ location: '2dsphere' });
+// --- Middleware Hooks ---
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {
@@ -154,18 +153,28 @@ userSchema.pre('save', async function(next) {
   }
 });
 
-// Method to compare password
+// --- Instance Methods (Required by route files) ---
+
+// 1. Method to compare password (Required by authRoutes.js)
 userSchema.methods.matchPassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Method to get public profile (without sensitive data)
+// 2. Method to get public profile (Required by userRoutes.js)
 userSchema.methods.getPublicProfile = function() {
   const userObj = this.toObject();
+  
+  // Clean the object before returning it to the frontend
   delete userObj.password;
   delete userObj.isVerified;
+  delete userObj.isActive;
+  delete userObj.__v;
+
   return userObj;
 };
 
-module.exports = mongoose.model('User', userSchema);
+// Create geospatial index for location-based queries
+userSchema.index({ location: '2dsphere' });
 
+// --- FINAL EXPORT (Uses ES Module 'export default') ---
+export default mongoose.model('User', userSchema);

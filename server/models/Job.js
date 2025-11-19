@@ -3,9 +3,9 @@
  * Represents a job posting created by a Service Seeker
  */
 
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
-const jobSchema = new mongoose.Schema(
+export const jobSchema = new mongoose.Schema(
   {
     // Job Details
     title: {
@@ -143,5 +143,5 @@ const jobSchema = new mongoose.Schema(
 jobSchema.index({ location: '2dsphere' });
 jobSchema.index({ postedBy: 1, status: 1 });
 
-module.exports = mongoose.model('Job', jobSchema);
+export default mongoose.model('Job', jobSchema);
 

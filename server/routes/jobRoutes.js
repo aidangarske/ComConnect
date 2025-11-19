@@ -3,10 +3,10 @@
  * Handles job postings, applications, and job-related operations
  */
 
-const express = require('express');
-const Job = require('../models/Job');
-const User = require('../models/User');
-const { authenticate, authorize } = require('../middleware/auth');
+import express from 'express';
+import Job from '../models/Job.js';
+import User from '../models/User.js';
+import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -275,5 +275,5 @@ router.delete('/:id', authenticate, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
 

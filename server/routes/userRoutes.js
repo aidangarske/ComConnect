@@ -3,9 +3,9 @@
  * Handles user profile, updates, and user-related operations
  */
 
-const express = require('express');
-const User = require('../models/User');
-const { authenticate, authorize } = require('../middleware/auth');
+import express from 'express';
+import User from '../models/User.js';
+import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -138,5 +138,5 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
 
