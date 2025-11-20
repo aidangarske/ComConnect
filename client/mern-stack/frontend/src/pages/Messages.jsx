@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useRole } from '../components/RoleContext';
+import { io } from 'socket.io-client'; 
 import { 
   Box, 
   HStack, 
@@ -12,35 +13,24 @@ import {
   Flex,
   Input,
   Spacer,
+  Spinner,
 } from '@chakra-ui/react';
 import comconnectLogo from "../logo/COMCONNECT_Logo.png";
-import { 
-  myUserId, 
-  mockConversations, 
-  mockMessages 
-} from './admin/mockData';
+
+// Connect to backend
+const socket = io("http://localhost:8080"); 
 
 function SendIconButton({ onClick }) {
   const [isHovered, setIsHovered] = useState(false);
   const style = {
     backgroundColor: isHovered ? '#c55a8f' : '#d97baa',
-    height: '42px',
-    width: '42px',
-    borderRadius: '6px',
-    border: 'none',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    height: '42px', width: '42px', borderRadius: '6px',
+    border: 'none', cursor: 'pointer', display: 'flex',
+    alignItems: 'center', justifyContent: 'center',
     transition: 'background-color 0.2s ease',
   };
   return (
-    <button
-      style={style}
-      onMouseOver={() => setIsHovered(true)}
-      onMouseOut={() => setIsHovered(false)}
-      onClick={onClick}
-    >
+    <button style={style} onMouseOver={() => setIsHovered(true)} onMouseOut={() => setIsHovered(false)} onClick={onClick}>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
       </svg>
@@ -50,15 +40,97 @@ function SendIconButton({ onClick }) {
 
 export default function Messages() {
   const navigate = useNavigate();
-  const { role } = useRole();
-  const [selectedConversationId, setSelectedConversationId] = useState('c1');
-  const [conversations, setConversations] = useState(mockConversations);
-  const [messages, setMessages] = useState(mockMessages);
+  const location = useLocation();
+  const { role, user } = useRole(); 
+  
+  const [selectedConversationId, setSelectedConversationId] = useState(null);
+  const [conversations, setConversations] = useState([]);
+  const [messages, setMessages] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
-  const [isTyping, setIsTyping] = useState(true); 
+  const [isTyping, setIsTyping] = useState(false); 
+  const [newMessage, setNewMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const selectedConversation = conversations.find(c => c.id === selectedConversationId);
-  const activeMessages = messages[selectedConversationId] || [];
+  // Helper to safely get full name
+  const getFullName = (userObj) => {
+    if (!userObj) return 'Unknown User';
+    return `${userObj.firstName || ''} ${userObj.lastName || ''}`.trim() || 'Unknown User';
+  };
+
+  // 1. Fetch Conversations
+  useEffect(() => {
+    const token = localStorage.getItem('token'); 
+    // Check for passed ID from navigation state
+    const passedConvoId = location.state?.newConvoId;
+
+    if (!token) {
+       navigate('/login');
+       return;
+    }
+
+    if (!user) return; 
+
+    setIsLoading(true);
+
+    fetch('http://localhost:8080/api/messages/conversations', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data && Array.isArray(data)) {
+          setConversations(data);
+          
+          // Logic: If we have a passed ID, use it. Otherwise default to first one.
+          if (passedConvoId) {
+             setSelectedConversationId(passedConvoId);
+             // Clear state so ID isn't reused on refresh
+             navigate(location.pathname, { replace: true, state: {} }); 
+          } else if (data.length > 0 && !selectedConversationId) {
+             setSelectedConversationId(data[0]._id);
+          }
+        }
+      })
+      .catch(err => console.error("Failed to fetch conversations:", err))
+      .finally(() => setIsLoading(false));
+      
+  }, [navigate, user, location.state]); // Dependent on location.state
+
+  // 2. Fetch Messages
+  useEffect(() => {
+    if (!selectedConversationId) return;
+    
+    // Check if we already have messages for this convo to avoid refetching
+    if (messages[selectedConversationId]) return;
+
+    const token = localStorage.getItem('token');
+    fetch(`http://localhost:8080/api/messages/${selectedConversationId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        setMessages(prev => ({ ...prev, [selectedConversationId]: data }));
+      })
+      .catch(err => console.error("Failed to fetch messages:", err));
+  }, [selectedConversationId, messages]);
+
+  // 3. Socket Listener
+  useEffect(() => {
+    socket.on('receiveMessage', (messageData) => {
+      setMessages(prevMessages => {
+        const newMessages = { ...prevMessages };
+        const convoId = messageData.conversationId;
+        if (!newMessages[convoId]) newMessages[convoId] = [];
+        
+        if (!newMessages[convoId].find(msg => msg._id === messageData.message._id)) {
+            newMessages[convoId].push(messageData.message);
+        }
+        return newMessages;
+      });
+    });
+    return () => {
+      socket.off('receiveMessage');
+    };
+  }, []);
 
   const getDashboardPath = () => {
     switch(role) {
@@ -67,26 +139,55 @@ export default function Messages() {
       default: return '/dashboard-provider';
     }
   };
+  
+  const handleSendMessage = () => {
+    if (newMessage.trim() === '' || !user) return;
 
-  const filteredConversations = conversations.filter(convo =>
-    convo.userName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    const messageData = {
+      conversationId: selectedConversationId,
+      message: {
+        id: `temp_${Date.now()}`,
+        senderId: user.id, 
+        text: newMessage,
+      }
+    };
+    
+    socket.emit('sendMessage', messageData);
+    setNewMessage('');
+  };
+  
+  const filteredConversations = conversations.filter(convo => {
+    const otherUser = convo.participants.find(p => p._id !== user?.id);
+    if (!otherUser) return false;
+    const fullName = getFullName(otherUser);
+    return fullName.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+  
+  const selectedConversation = conversations.find(c => c._id === selectedConversationId);
+  const activeMessages = messages[selectedConversationId] || [];
+
+  if (!user && localStorage.getItem('token')) {
+      return (
+          <Box minH="100vh" bg="#0a0e27" display="flex" alignItems="center" justifyContent="center">
+              <Spinner color="white" size="xl" />
+          </Box>
+      )
+  }
 
   return (
     <Box minH="100vh" bg="#0a0e27" color="white">
-      {/* Header */}
       <Box bg="white" borderBottom="1px solid #1a1f3a" py={4} px={8}>
         <HStack justify="space-between" align="center">
-        <Image 
-          src={comconnectLogo} 
-          alt="ComConnect" 
-          h={["80px", "80px", "80px"]}
-          w="auto"
-          objectFit="contain"
-          maxW="100%"
-          cursor="pointer"
-          onClick={() => navigate(getDashboardPath())}
-        />
+          <Image 
+            src={comconnectLogo} 
+            alt="ComConnect" 
+            h={["80px", "80px", "80px"]}
+            w="auto"
+            objectFit="contain"
+            maxW="100%"
+            cursor="pointer"
+            onClick={() => navigate(getDashboardPath())}
+          />
           <HStack spacing={6}>
             <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/profile')}>
               Profile
@@ -113,7 +214,6 @@ export default function Messages() {
           <Heading as="h1" size="xl" color="white" mb={2}>
             Messages
           </Heading>
-
           <Input 
             placeholder="Search chats..."
             value={searchQuery}
@@ -121,32 +221,30 @@ export default function Messages() {
             bg="#0a0e27"
             borderColor="gray.600"
             mb={2}
-            _placeholder={{ color: 'gray.400' }} 
+            _placeholder={{ color: 'gray.400' }}
           />
-
-          {filteredConversations.map((convo) => (
-            <HStack
-              key={convo.id}
-              w="full"
-              p={3}
-              borderRadius="md"
-              cursor="pointer"
-              bg={selectedConversationId === convo.id ? '#d97baa' : 'transparent'}
-              _hover={{ bg: selectedConversationId === convo.id ? '#d97baa' : '#2a2f4a' }}
-              onClick={() => setSelectedConversationId(convo.id)}
-            >
-              <VStack align="start" spacing={0} w="full">
-                <Text fontWeight="bold">{convo.userName}</Text>
-                <Text fontSize="sm" color="gray.300" noOfLines={1}> 
-                  {convo.lastMessage}
-                </Text>
-              </VStack>
-              <Spacer />
-              {convo.id === 'c1' && (
-                <Box w="10px" h="10px" bg="#d97baa" borderRadius="full" />
-              )}
-            </HStack>
-          ))}
+          {filteredConversations.map((convo) => {
+            const otherUser = convo.participants.find(p => p._id !== user?.id);
+            const fullName = getFullName(otherUser);
+            return (
+              <HStack
+                key={convo._id}
+                w="full"
+                p={3}
+                borderRadius="md"
+                cursor="pointer"
+                // Highlight the selected conversation
+                bg={selectedConversationId === convo._id ? '#d97baa' : 'transparent'}
+                _hover={{ bg: selectedConversationId === convo._id ? '#d97baa' : '#2a2f4a' }}
+                onClick={() => setSelectedConversationId(convo._id)}
+              >
+                <VStack align="start" spacing={0} w="full">
+                  <Text fontWeight="bold">{fullName}</Text>
+                </VStack>
+                <Spacer />
+              </HStack>
+            )
+          })}
         </VStack>
 
         <VStack
@@ -162,9 +260,12 @@ export default function Messages() {
                   size="md" 
                   cursor="pointer" 
                   _hover={{ textDecoration: 'underline' }}
-                  onClick={() => navigate(`/profile/${selectedConversation.userId}`)}
+                  onClick={() => {
+                     const otherUser = selectedConversation.participants.find(p => p._id !== user.id);
+                     if(otherUser) navigate(`/profile/${otherUser._id}`);
+                  }}
                 >
-                  Chat with {selectedConversation.userName}
+                  Chat with {getFullName(selectedConversation.participants.find(p => p._id !== user.id))}
                 </Heading>
                 {isTyping && (
                   <Text fontSize="sm" color="gray.300">is typing...</Text> 
@@ -180,17 +281,19 @@ export default function Messages() {
                 pr={2}
               >
                 {activeMessages.map((msg) => {
-                  const isMe = msg.senderId === myUserId;
+                  const senderId = msg.senderId?._id || msg.senderId;
+                  const isMe = senderId === user?.id;
+                  
                   return (
                     <Flex 
-                      key={msg.id} 
+                      key={msg._id || msg.id}
                       w="full" 
                       justify={isMe ? 'flex-end' : 'flex-start'}
                       mb={2}
                     >
                       <VStack align={isMe ? 'flex-end' : 'flex-start'} spacing={1}>
                         <Box
-                          bg={isMe ? '#d97baa' : '#3d4461'} 
+                          bg={isMe ? '#d97baa' : '#3d4461'}
                           color='white'
                           px={4}
                           py={2}
@@ -200,7 +303,7 @@ export default function Messages() {
                           <Text>{msg.text}</Text>
                         </Box>
                         <Text fontSize="xs" color="gray.400" px={2}>
-                          10:31 AM
+                          {new Date(msg.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </Text>
                       </VStack>
                     </Flex>
@@ -215,9 +318,12 @@ export default function Messages() {
                   borderColor="gray.600"
                   _hover={{ borderColor: 'gray.500' }}
                   h="42px"
-                  _placeholder={{ color: 'gray.400' }} 
+                  _placeholder={{ color: 'gray.400' }}
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                 />
-                <SendIconButton onClick={() => alert('Sending message...')} />
+                <SendIconButton onClick={handleSendMessage} />
               </HStack>
             </>
           ) : (

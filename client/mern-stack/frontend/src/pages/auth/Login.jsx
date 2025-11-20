@@ -56,7 +56,7 @@ export default function Login() {
       
       // Set role in context (saves to localStorage automatically)
       const userRole = data.user.role;
-      setRole(userRole);
+      setRole(userRole, data.user);
 
       // Navigate to correct dashboard based on role
       if (userRole === 'seeker') {
