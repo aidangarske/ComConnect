@@ -24,12 +24,15 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:5173", // Your frontend's port
+    credentials: true,
+    methods: ["GET", "POST"]
   }
 });
 
 // Middleware
 app.use(cors({
-  origin: "http://localhost:5173"
+  origin: "http://localhost:5173",
+  credentials: true
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -49,6 +52,9 @@ const connectDB = async () => {
 };
 
 connectDB();
+
+// Make io available to routes via app.locals
+app.locals.io = io;
 
 // Routes
 app.use('/api/auth', authRoutes);

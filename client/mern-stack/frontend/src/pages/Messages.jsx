@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useRole } from '../components/RoleContext';
-import { io } from 'socket.io-client'; 
+import { getToken } from '../utils/tokenUtils';
+import { jwtDecode } from 'jwt-decode';
+import { getSocket } from '../utils/socket'; 
 import { 
   Box, 
   HStack, 
@@ -17,8 +19,7 @@ import {
 } from '@chakra-ui/react';
 import comconnectLogo from "../logo/COMCONNECT_Logo.png";
 
-// Connect to backend
-const socket = io("http://localhost:8080"); 
+// Socket connection will be created via getSocket() when needed 
 
 function SendIconButton({ onClick }) {
   const [isHovered, setIsHovered] = useState(false);
@@ -59,7 +60,7 @@ export default function Messages() {
 
   // 1. Fetch Conversations
   useEffect(() => {
-    const token = localStorage.getItem('token'); 
+    const token = getToken(); 
     // Check for passed ID from navigation state
     const passedConvoId = location.state?.newConvoId;
 
@@ -102,7 +103,7 @@ export default function Messages() {
     // Check if we already have messages for this convo to avoid refetching
     if (messages[selectedConversationId]) return;
 
-    const token = localStorage.getItem('token');
+    const token = getToken();
     fetch(`http://localhost:8080/api/messages/${selectedConversationId}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
@@ -128,21 +129,34 @@ export default function Messages() {
       });
     });
     return () => {
+      const socket = getSocket();
       socket.off('receiveMessage');
     };
   }, []);
 
   const getDashboardPath = () => {
-    switch(role) {
-      case 'seeker': return '/dashboard-seeker';
-      case 'admin': return '/admin';
-      default: return '/dashboard-provider';
+    // Always read from token to avoid stale role from context
+    const token = getToken();
+    if (token) {
+      try {
+        const decodedUser = jwtDecode(token);
+        const currentRole = decodedUser.role;
+        switch(currentRole) {
+          case 'seeker': return '/dashboard-seeker';
+          case 'admin': return '/admin';
+          default: return '/dashboard-provider';
+        }
+      } catch (e) {
+        return '/login';
+      }
     }
+    return '/login';
   };
   
   const handleSendMessage = () => {
     if (newMessage.trim() === '' || !user) return;
-
+    
+    const socket = getSocket();
     const messageData = {
       conversationId: selectedConversationId,
       message: {
@@ -166,7 +180,7 @@ export default function Messages() {
   const selectedConversation = conversations.find(c => c._id === selectedConversationId);
   const activeMessages = messages[selectedConversationId] || [];
 
-  if (!user && localStorage.getItem('token')) {
+  if (!user && getToken()) {
       return (
           <Box minH="100vh" bg="#0a0e27" display="flex" alignItems="center" justifyContent="center">
               <Spinner color="white" size="xl" />

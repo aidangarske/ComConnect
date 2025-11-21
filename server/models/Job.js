@@ -110,6 +110,10 @@ export const jobSchema = new mongoose.Schema(
           type: String,
           enum: ['pending', 'accepted', 'rejected'],
           default: 'pending'
+        },
+        isDirectHire: {
+          type: Boolean,
+          default: false
         }
       }
     ],
@@ -125,6 +129,10 @@ export const jobSchema = new mongoose.Schema(
       default: false
     },
     completedAt: Date,
+    completionNotes: {
+      type: String,
+      maxlength: 2000
+    },
 
     // Timestamps
     createdAt: {

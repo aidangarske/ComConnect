@@ -4,6 +4,11 @@ import { Box, HStack, VStack, Text, Button, Heading, Image, Wrap, WrapItem, Badg
 import { useRole } from '../../components/RoleContext'
 // Import the utility function we created in Step 1
 import { startChatWithRecipient } from '../../utils/chatUtils.js';
+import JobDetailModal from '../../components/JobDetailModal';
+import DirectHireModal from '../../components/DirectHireModal';
+import { toast } from 'react-toastify';
+import { getSocket } from '../../utils/socket';
+import { getToken } from '../../utils/tokenUtils';
 
 import comconnectLogo from "../../logo/COMCONNECT_Logo.png";
 import exampleProfilepic from "../../profile_picture/OIP.jpg";
@@ -169,6 +174,10 @@ export default function ServiceSeekerDashboard() {
   const [loadingProviders, setLoadingProviders] = useState(false)
   const [currentUserId, setCurrentUserId] = useState(null)
   const [deletingJobId, setDeletingJobId] = useState(null)
+  const [selectedJobId, setSelectedJobId] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isDirectHireModalOpen, setIsDirectHireModalOpen] = useState(false)
+  const [selectedProvider, setSelectedProvider] = useState(null)
 
   useEffect(() => {
     fetchJobs()
@@ -177,6 +186,83 @@ export default function ServiceSeekerDashboard() {
     const interval = setInterval(() => fetchProviders(), 30000)
     return () => clearInterval(interval)
   }, [])
+
+  // Socket.io real-time updates
+  useEffect(() => {
+    const socket = getSocket();
+    socket.on('jobCreated', handleJobCreated);
+    socket.on('jobUpdated', handleJobUpdated);
+    socket.on('jobApplication', handleJobApplication);
+
+    return () => {
+      socket.off('jobCreated', handleJobCreated);
+      socket.off('jobUpdated', handleJobUpdated);
+      socket.off('jobApplication', handleJobApplication);
+    };
+  }, [currentUserId]); // Removed jobs from dependencies to prevent re-subscribing
+
+  const handleJobCreated = (data) => {
+    // Add new job to the list if it belongs to current user
+    if (data.job && currentUserId) {
+      const jobPosterId = typeof data.job.postedBy === 'object' 
+        ? data.job.postedBy._id 
+        : data.job.postedBy;
+      if (jobPosterId === currentUserId) {
+        setJobs(prevJobs => {
+          // Check if job already exists
+          if (!prevJobs.find(j => j._id === data.job._id)) {
+            return [data.job, ...prevJobs];
+          }
+          return prevJobs;
+        });
+      }
+    }
+  };
+
+  const handleJobUpdated = (data) => {
+    // Update job in the list
+    if (data.jobId && data.job) {
+      setJobs(prevJobs => 
+        prevJobs.map(job => 
+          job._id === data.jobId ? data.job : job
+        )
+      );
+    }
+  };
+
+  const handleJobApplication = (data) => {
+    // Update job when new application is received
+    if (data.jobId && data.job) {
+      // Check if this is a new application for one of the user's jobs
+      const jobPosterId = typeof data.job.postedBy === 'object' 
+        ? data.job.postedBy._id 
+        : data.job.postedBy;
+      
+      if (jobPosterId === currentUserId) {
+        // Show notification for new application
+        const providerName = data.application?.providerName || 'A provider';
+        toast.info(`New application from ${providerName} for "${data.job.title}"! Click to view.`, {
+          onClick: () => {
+            setSelectedJobId(data.jobId);
+            setIsModalOpen(true);
+          },
+          style: { cursor: 'pointer' }
+        });
+        
+        // Auto-open modal if not already open
+        if (!isModalOpen || selectedJobId !== data.jobId) {
+          setSelectedJobId(data.jobId);
+          setIsModalOpen(true);
+        }
+      }
+      
+      setJobs(prevJobs => 
+        prevJobs.map(job => 
+          job._id === data.jobId ? data.job : job
+        )
+      );
+    }
+  };
 
   const fetchJobs = async () => {
     try {
@@ -205,7 +291,7 @@ export default function ServiceSeekerDashboard() {
 
   const fetchCurrentUser = async () => {
     try {
-      const token = localStorage.getItem('token')
+      const token = getToken()
       if (!token) return
       const response = await fetch(`${API_URL}/users/profile`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -219,7 +305,7 @@ export default function ServiceSeekerDashboard() {
     if (!window.confirm('Delete this job?')) return
     setDeletingJobId(jobId)
     try {
-      const token = localStorage.getItem('token')
+      const token = getToken()
       const response = await fetch(`${API_URL}/jobs/${jobId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -243,8 +329,14 @@ export default function ServiceSeekerDashboard() {
   }
 
   const handleHireProvider = (provider) => {
-    const name = provider.name || provider.firstName || 'Provider'
-    alert(`You've selected ${name}! Sending hire request...`)
+    setSelectedProvider(provider)
+    setIsDirectHireModalOpen(true)
+  }
+
+  const handleDirectHireSuccess = () => {
+    // Refresh jobs and providers after successful hire
+    fetchJobs()
+    fetchProviders()
   }
 
   return (
@@ -316,7 +408,25 @@ export default function ServiceSeekerDashboard() {
                     <VStack align="start" w="full" spacing={3}>
                       <HStack w="full" justify="space-between" align="start">
                         <VStack align="start" flex={1} spacing={2}>
-                          <Text color="white" fontWeight="bold" fontSize="md">{job.title}</Text>
+                          <HStack spacing={2} align="center">
+                            <Text color="white" fontWeight="bold" fontSize="md">{job.title}</Text>
+                            <Badge
+                              bg={
+                                job.status === 'open' ? '#d97baa' :
+                                job.status === 'in-progress' ? '#4CAF50' :
+                                job.status === 'completed' ? '#2196F3' : '#999'
+                              }
+                              color="white"
+                              fontSize="xs"
+                            >
+                              {job.status}
+                            </Badge>
+                            {job.applications && job.applications.length > 0 && (
+                              <Badge bg="#3a3f5e" color="white" fontSize="xs">
+                                {job.applications.length} {job.applications.length === 1 ? 'applicant' : 'applicants'}
+                              </Badge>
+                            )}
+                          </HStack>
                           <Text color="#aaa" fontSize="sm" maxW="300px" noOfLines={2}>{job.description}</Text>
                           <HStack spacing={4}>
                             <Badge bg="#d97baa" color="white">{job.category}</Badge>
@@ -329,7 +439,10 @@ export default function ServiceSeekerDashboard() {
                             color="white"
                             size="sm"
                             _hover={{ bg: '#c55a8f' }}
-                            onClick={() => alert(`Job details: ${job.title}\n\nDescription: ${job.description}\n\nBudget: $${job.budget}\n\nCategory: ${job.category}\n\nStatus: ${job.status}`)}
+                            onClick={() => {
+                              setSelectedJobId(job._id);
+                              setIsModalOpen(true);
+                            }}
                           >
                             Details
                           </Button>
@@ -399,6 +512,27 @@ export default function ServiceSeekerDashboard() {
           </VStack>
         </VStack>
       </Box>
+
+      {/* Job Detail Modal */}
+      <JobDetailModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedJobId(null);
+        }}
+        jobId={selectedJobId}
+      />
+
+      {/* Direct Hire Modal */}
+      <DirectHireModal
+        isOpen={isDirectHireModalOpen}
+        onClose={() => {
+          setIsDirectHireModalOpen(false);
+          setSelectedProvider(null);
+        }}
+        provider={selectedProvider}
+        onSuccess={handleDirectHireSuccess}
+      />
     </Box>
   )
 }

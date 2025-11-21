@@ -1,5 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import { ChakraProvider, defaultSystem } from '@chakra-ui/react'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 import Home from './pages/Home'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
@@ -9,6 +11,7 @@ import ServiceProviderDashboard from './pages/dashboards/ServiceProviderDashboar
 import Profile from './pages/Profile'
 import Messages from './pages/Messages'
 import CreateJob from './pages/CreateJob'
+import HireProvider from './pages/HireProvider'
 import AdminDashboard from './pages/dashboards/AdminDashboard'
 import AdminSettings from './pages/admin/AdminSettings' 
 import ReportsView from './pages/admin/ReportsView'
@@ -30,6 +33,7 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/create-job" element={<CreateJob />} />
+        <Route path="/hire/:jobId/:providerId" element={<HireProvider />} />
 
         <Route path="/admin" element={<AdminDashboard />}>
           <Route path="users" element={<UserManagement />} />
@@ -39,6 +43,18 @@ function App() {
           <Route path="support" element={<SupportTickets />} />
         </Route>
       </Routes>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
     </ChakraProvider>
   )
 }

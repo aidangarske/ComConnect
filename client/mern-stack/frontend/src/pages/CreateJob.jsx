@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Box, HStack, VStack, Text, Button, Heading, Input, Textarea, Image } from '@chakra-ui/react'
+import { getToken } from '../utils/tokenUtils'
 
 import comconnectLogo from "../logo/COMCONNECT_Logo.png";
 
@@ -34,7 +35,7 @@ export default function CreateJob() {
     setSuccess('')
 
     try {
-      const token = localStorage.getItem('token')
+      const token = getToken()
       if (!token) {
         navigate('/login')
         return
