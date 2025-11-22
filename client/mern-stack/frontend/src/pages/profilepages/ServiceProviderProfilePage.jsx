@@ -14,8 +14,8 @@ export default function ServiceProviderProfile() {
     alert("Profile saved (placeholder). Backend connection coming soon.");
   };
 
-  const handleDelete = () => {
-    alert("Delete Service Provider account (placeholder). Backend connection coming soon.");
+  const handleDeleteAccount = () => {
+    alert("Feature not active yet, backend delete API in progress.");
   };
 
   return (
@@ -57,8 +57,8 @@ export default function ServiceProviderProfile() {
             </VStack>
 
             <VStack align="start" w="full" spacing={2}>
-              <Text color="#999" fontSize="sm" fontWeight="bold">Services Offered</Text>
-              <Input placeholder="Comma separated services" bg="#1a1f3a" border="1px solid #3a4456" color="white" value={services} onChange={(e) => setServices(e.target.value)} />
+              <Text color="#999" fontSize="sm" fontWeight="bold">Services</Text>
+              <Input placeholder="Services you provide" bg="#1a1f3a" border="1px solid #3a4456" color="white" value={services} onChange={(e) => setServices(e.target.value)} />
             </VStack>
 
             <VStack align="start" w="full" spacing={2}>
@@ -75,7 +75,7 @@ export default function ServiceProviderProfile() {
               <Button flex={1} bg="#d97baa" color="white" _hover={{ bg: '#c55a8f' }} py={6} borderRadius="md" fontWeight="bold" fontSize="md" onClick={handleSave}>
                 Save Profile
               </Button>
-              <Button flex={1} bg="#ff4d4d" color="white" _hover={{ bg: '#cc0000' }} py={6} borderRadius="md" fontWeight="bold" fontSize="md" onClick={handleDelete}>
+              <Button flex={1} bg="red.500" color="white" _hover={{ bg: 'red.600' }} py={6} borderRadius="md" fontWeight="bold" fontSize="md" onClick={handleDeleteAccount}>
                 Delete Account
               </Button>
             </HStack>
@@ -85,3 +85,4 @@ export default function ServiceProviderProfile() {
     </Box>
   );
 }
+

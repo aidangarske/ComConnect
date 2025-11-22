@@ -14,6 +14,10 @@ export default function ServiceSeekerProfile() {
     alert("Profile saved (placeholder). Backend connection coming soon.");
   };
 
+  const handleDeleteAccount = () => {
+    alert("Feature not active yet, backend delete API in progress.");
+  };
+
   return (
     <Box minH="100vh" bg="#0a0e27" py={8} px={8}>
       {/* Header */}
@@ -70,6 +74,9 @@ export default function ServiceSeekerProfile() {
             <HStack spacing={4} w="full" pt={4}>
               <Button flex={1} bg="#d97baa" color="white" _hover={{ bg: '#c55a8f' }} py={6} borderRadius="md" fontWeight="bold" fontSize="md" onClick={handleSave}>
                 Save Profile
+              </Button>
+              <Button flex={1} bg="red.500" color="white" _hover={{ bg: 'red.600' }} py={6} borderRadius="md" fontWeight="bold" fontSize="md" onClick={handleDeleteAccount}>
+                Delete Account
               </Button>
             </HStack>
           </VStack>
