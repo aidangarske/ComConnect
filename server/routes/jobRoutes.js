@@ -66,7 +66,7 @@ router.post('/', authenticate, authorize('seeker', 'admin'), async (req, res) =>
           budget: parseFloat(budget),
       budgetType: budgetType || 'fixed',
       deadline: deadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-      estimatedDuration: estimatedDuration || '1-2 weeks',
+      estimatedDuration: parseFloat(estimatedDuration) || 1, // Default to 1 hour if not provided
       address: address || '',
       city: city || '',
       postedBy: req.user.id,

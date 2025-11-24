@@ -85,7 +85,7 @@ export const jobSchema = new mongoose.Schema(
       required: true
     },
     estimatedDuration: {
-      type: String,
+      type: Number,
       required: true
     },
 
