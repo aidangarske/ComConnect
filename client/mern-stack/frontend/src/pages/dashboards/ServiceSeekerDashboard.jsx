@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Box, HStack, VStack, Text, Button, Heading, Image, Wrap, WrapItem, Badge } from '@chakra-ui/react'
+import { Box, HStack, VStack, Text, Button, Menu, Portal, Heading, Image, Wrap, WrapItem, Badge } from '@chakra-ui/react'
 import { useRole } from '../../components/RoleContext'
 
 // Imports static assets (logo and example profile picture).
@@ -17,7 +17,7 @@ const API_URL = 'http://localhost:8080/api';
 const mockProviders = [
   {
     id: 1,
-    username: '@johndoe',
+    username: 'johndoe',
     name: 'John Pork',
     rating: 4.8,
     distance: 2.7,
@@ -27,7 +27,7 @@ const mockProviders = [
   },
   {
     id: 2,
-    username: '@sarahjones',
+    username: 'sarahjones',
     name: 'Sarah Jones',
     rating: 4.9,
     distance: 1.2,
@@ -37,7 +37,7 @@ const mockProviders = [
   },
   {
     id: 3,
-    username: '@mikedavis',
+    username: 'mikedavis',
     name: 'Mike Davis',
     rating: 4.6,
     distance: 3.5,
@@ -47,7 +47,7 @@ const mockProviders = [
   },
   {
     id: 4,
-    username: '@emilywilson',
+    username: 'emilywilson',
     name: 'Emily Wilson',
     rating: 5.0,
     distance: 0.8,
@@ -57,7 +57,7 @@ const mockProviders = [
   },
   {
     id: 5,
-    username: '@tomanderson',
+    username: 'tomanderson',
     name: 'Tom Anderson',
     rating: 4.7,
     distance: 2.1,
@@ -67,7 +67,7 @@ const mockProviders = [
   },
   {
     id: 6,
-    username: '@alexchen',
+    username: 'alexchen',
     name: 'Alex Chen',
     rating: 4.9,
     distance: 1.9,
@@ -77,7 +77,7 @@ const mockProviders = [
   },
   {
     id: 7,
-    username: '@lisabrown',
+    username: 'lisabrown',
     name: 'Lisa Brown',
     rating: 4.8,
     distance: 4.2,
@@ -87,7 +87,7 @@ const mockProviders = [
   },
   {
     id: 8,
-    username: '@roberttaylor',
+    username: 'roberttaylor',
     name: 'Robert Taylor',
     rating: 4.5,
     distance: 5.0,
@@ -96,6 +96,20 @@ const mockProviders = [
     hourlyRate: 55
   },
 ];
+
+/*List of skills to select from the skills menu */
+const SKILL_OPTIONS = [
+  'Plumbing',
+  'Electrical',
+  'Manual Labor',
+  'Cleaning',
+  'Gardening',
+  'Painting',
+  'Photography',
+  'Tutoring',
+  'Writing',
+];
+
 
 /**
  * ProviderCard Component - displays individual provider profile in a beautiful card format
@@ -108,9 +122,24 @@ function ProviderCard({ provider, onHire }) {
   const username = provider.username || `@${provider.firstName?.toLowerCase() || 'user'}`
   const rating = provider.rating || 0
   const name = provider.name || `${provider.firstName} ${provider.lastName}`.trim() || 'Service Provider'
-  const specialties = provider.specialties && provider.specialties.length > 0 
-    ? provider.specialties 
-    : ['Professional Services']
+  // Normalize specialties into an array
+  let specialties = [];
+
+  if (Array.isArray(provider.specialties)) {
+    specialties = provider.specialties;
+  } else if (typeof provider.specialties === 'string' && provider.specialties.trim().length > 0) {
+    // If backend ever sends a comma-separated string, turn it into an array
+    specialties = provider.specialties
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+  }
+
+  // Fallback if still empty
+  if (!specialties.length) {
+    specialties = ['Professional Services'];
+  }
+
   const hourlyRate = provider.hourlyRate || 0
   const distance = provider.distance || 0
   
@@ -137,7 +166,7 @@ function ProviderCard({ provider, onHire }) {
           fontWeight="bold"
           color="#d97baa"
         >
-          {username}
+          @{username}
         </Text>
         <Text fontSize="sm" color="white">{rating}⭐</Text>
       </HStack>
@@ -225,15 +254,16 @@ function ProviderCard({ provider, onHire }) {
 
 /**
  * ServiceSeekerDashboard - Main page for service seekers to find and hire providers
- * Features: filter system (by relevance, location, price, rating), provider cards with hire buttons
+ * Features: filter system (by skills, location, price, rating), provider cards with hire buttons
  */
 export default function ServiceSeekerDashboard() {
 
   // Router navigation for clicks on logo and header links.
   const navigate = useNavigate()
   const { role } = useRole()
-  const [filterType, setFilterType] = useState('Relevance')
+  const [filterType, setFilterType] = useState('Skills')
   const [filteredProviders, setFilteredProviders] = useState([])
+  const [selectedSkills, setSelectedSkills] = useState([]);
   const [realProviders, setRealProviders] = useState([])
   const [jobs, setJobs] = useState([])
   const [loadingJobs, setLoadingJobs] = useState(false)
@@ -254,6 +284,34 @@ export default function ServiceSeekerDashboard() {
 
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    if (selectedSkills.length === 0) {
+      // No skills selected → show all providers
+      setFilteredProviders(realProviders.length ? realProviders : mockProviders);
+      return;
+    }
+
+    // Otherwise filter by matching ANY selected skill
+    const filtered = (realProviders.length ? realProviders : mockProviders).filter((provider) => {
+      return provider.specialties?.some((skill) =>
+        selectedSkills.some(
+          (selected) => selected.toLowerCase() === skill.toLowerCase()
+        )
+      );
+    });
+
+    setFilteredProviders(filtered);
+  }, [selectedSkills, realProviders]);
+
+
+  const toggleSkill = (skill) => {
+    setSelectedSkills((prev) =>
+      prev.includes(skill)
+        ? prev.filter((s) => s !== skill)   // remove if already selected
+        : [...prev, skill]                  // add if not selected
+    );
+  };
 
   const fetchJobs = async () => {
     try {
@@ -277,9 +335,28 @@ export default function ServiceSeekerDashboard() {
       const response = await fetch(`${API_URL}/users/providers`)
       const data = await response.json()
       if (response.ok && data.providers) {
-        setRealProviders(data.providers)
-        setFilteredProviders(data.providers)
+        const normalized = data.providers.map((p) => {
+          let specialties = [];
+
+          if (Array.isArray(p.specialties)) {
+            specialties = p.specialties;
+          } else if (typeof p.specialties === 'string' && p.specialties.trim().length > 0) {
+            specialties = p.specialties
+              .split(',')
+              .map(s => s.trim())
+              .filter(Boolean);
+          }
+
+          return {
+            ...p,
+            specialties,
+          };
+        });
+
+        setRealProviders(normalized);
+        setFilteredProviders(normalized);
       }
+
     } catch (err) {
       console.error('Failed to fetch providers:', err)
       // Fall back to mock providers if API fails
@@ -352,18 +429,9 @@ export default function ServiceSeekerDashboard() {
     return () => window.removeEventListener('focus', handleFocus)
   }, [])
 
-  // Returns the correct dashboard path based on user role
-  const getDashboardPath = () => {
-    switch(role) {
-      case 'seeker': return '/dashboard-seeker'
-      case 'admin': return '/admin'
-      default: return '/dashboard-provider'
-    }
-  }
-
   /**
    * Handles filter button clicks - sorts providers based on selected filter
-   * Supports: Relevance (original), Location (nearest), Price (cheapest), Rating (best)
+   * Supports: Skills, Location (nearest), Price (cheapest), Rating (best)
    */
   const handleFilterChange = (filter) => {
     setFilterType(filter)
@@ -378,8 +446,8 @@ export default function ServiceSeekerDashboard() {
       case 'Rating':
         sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0))
         break
+      case 'Skills':
       default:
-        // 'Relevance' - keep original order
         break
     }
     setFilteredProviders(sorted)
@@ -485,6 +553,7 @@ export default function ServiceSeekerDashboard() {
                           <HStack spacing={4}>
                             <Badge bg="#d97baa" color="white">{job.category}</Badge>
                             <Text color="#999" fontSize="sm">Budget: ${job.budget}</Text>
+                            <Text color="#999" fontSize="sm">Estimated Duration: ~{job.estimatedDuration} hrs</Text>
                           </HStack>
                         </VStack>
                         <HStack spacing={2}>
@@ -525,20 +594,90 @@ export default function ServiceSeekerDashboard() {
               <Heading as="h2" size="lg" color="white">
                 Browse Service Providers
               </Heading>
-              <Button
-                size="xs"
-                bg="transparent"
-                color="#d97baa"
-                border="1px solid #d97baa"
-                _hover={{ bg: 'rgba(217, 123, 170, 0.1)' }}
-                onClick={fetchProviders}
-                isDisabled={loadingProviders}
-              >
-                {loadingProviders ? '⟳ Refreshing...' : '⟳ Refresh'}
-              </Button>
             </HStack>
+            <VStack align="flex-end" spacing={2}>
+              <Menu.Root>
+                <Menu.Trigger asChild>
+                  <Button
+                    size="sm"
+                    bg={selectedSkills.length ? '#d97baa' : 'transparent'}
+                    color="white"
+                    borderColor="#3a3f5e"
+                    border="1px solid"
+                    _hover={{ bg: '#d97baa' }}
+                    transition="all 0.2s"
+                  >
+                    {selectedSkills.length === 0
+                      ? 'Skills'
+                      : `${selectedSkills.length} skill${selectedSkills.length > 1 ? 's' : ''} selected`}
+                  </Button>
+                </Menu.Trigger>
+
+                <Portal>
+                  <Menu.Positioner>
+                    <Menu.Content
+                      bg="#11152f"
+                      borderColor="#3a3f5e"
+                      borderWidth="1px"
+                      borderRadius="lg"
+                      py={2}
+                      minW="220px"
+                    >
+                      {SKILL_OPTIONS.map((skill) => {
+                        const isSelected = selectedSkills.includes(skill)
+                        return (
+                          <Menu.Item
+                            key={skill}
+                            onClick={() => toggleSkill(skill)}
+                            _hover={{ bg: 'rgba(217, 123, 170, 0.12)' }}
+                            px={3}
+                            py={2}
+                          >
+                            <HStack justify="space-between" w="full">
+                              <Text fontSize="sm" color="white">
+                                {skill}
+                              </Text>
+                              {isSelected && (
+                                <Box
+                                  boxSize="8px"
+                                  borderRadius="full"
+                                  bg="#d97baa"
+                                />
+                              )}
+                            </HStack>
+                          </Menu.Item>
+                        )
+                      })}
+                    </Menu.Content>
+                  </Menu.Positioner>
+                </Portal>
+              </Menu.Root>
+
+              {selectedSkills.length > 0 && (
+                <Wrap spacing={2} justify="flex-end" maxW="260px">
+                  {selectedSkills.map((skill) => (
+                    <WrapItem key={skill}>
+                      <Badge
+                        px={2}
+                        py={1}
+                        borderRadius="full"
+                        bg="rgba(217, 123, 170, 0.15)"
+                        color="#d97baa"
+                        border="1px solid #d97baa"
+                        fontSize="xs"
+                        cursor="pointer"
+                        onClick={() => toggleSkill(skill)} // click pill to remove
+                      >
+                        {skill} ✕
+                      </Badge>
+                    </WrapItem>
+                  ))}
+                </Wrap>
+              )}
+            </VStack>
+
             <HStack spacing={2} flex={1}>
-              {['Relevance', 'Location', 'Price', 'Rating'].map((filter) => (
+              {['Location', 'Price', 'Rating'].map((filter) => (
                 <Button
                   key={filter}
                   size="sm"
