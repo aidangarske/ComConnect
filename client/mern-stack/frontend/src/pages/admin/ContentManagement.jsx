@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Heading,
@@ -76,18 +76,66 @@ const ServiceList = ({ items, showActions, onUpdateStatus }) => (
 );
 
 export default function ContentManagement() {
-  const [services, setServices] = useState(mockServices);
+  const [services, setServices] = useState([]);
   const [activeTab, setActiveTab] = useState('pending');
+  const [isLoading, setIsLoading] = useState(true);
 
+   const fetchServices = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/admin/content`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.status === 401 || response.status === 403) {
+         return;
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setServices(data.data);
+      } else {
+        console.error('Failed to fetch services:', data.message);
+      }
+    } catch (error) {
+      console.error('Error fetching content:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchServices();
+  }, []);
   const pendingServices = services.filter(s => s.status === 'pending');
-  const approvedServices = services.filter(s => s.status === 'approved');
+  const approvedServices = services.filter(s => s.status === 'open' || s.status === 'approved');
 
-  const handleUpdateStatus = (id, newStatus) => {
-    setServices(currentServices =>
-      currentServices.map(service =>
-        service.id === id ? { ...service, status: newStatus } : service
-      )
-    );
+  const handleUpdateStatus = async (id, newStatus) => {
+    if (!window.confirm(`Are you sure you want to ${newStatus} this posting?`)) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/admin/content/${id}/status`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast({ title: `Job ${newStatus} successfully`, status: "success", duration: 3000 });
+        fetchServices();
+      } else {
+        toast({ title: data.message || "Update failed", status: "error", duration: 3000 });
+      }
+    } catch (error) {
+      toast({ title: "Server error", status: "error", duration: 3000 });
+    }
   };
 
   return (
