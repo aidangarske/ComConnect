@@ -224,24 +224,6 @@ function JobCard({ job, onApply, onCardClick, user }) {
         <Text fontSize="sm" color="#aaa">{job.distance} miles | {job.time}</Text>
       </VStack>
 
-      {/* Applied badge */}
-      {hasApplied && (
-        <Badge
-          position="absolute"
-          top="20px"
-          right="20px"
-          bg="#4CAF50"
-          color="white"
-          px={3}
-          py={1}
-          borderRadius="full"
-          fontSize="xs"
-          fontWeight="bold"
-        >
-          Applied
-        </Badge>
-      )}
-
       {/* Action button - click to apply for this job */}
       <Button
         position="absolute"

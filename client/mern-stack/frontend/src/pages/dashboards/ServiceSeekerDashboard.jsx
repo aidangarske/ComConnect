@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Box, HStack, VStack, Text, Button, Heading, Image, Wrap, WrapItem, Badge } from '@chakra-ui/react'
+import { Box, HStack, VStack, Text, Button, Heading, Wrap, WrapItem, Badge } from '@chakra-ui/react'
 import { useRole } from '../../components/RoleContext'
 // Import the utility function we created in Step 1
 import { startChatWithRecipient } from '../../utils/chatUtils.js';
 import JobDetailModal from '../../components/JobDetailModal';
 import DirectHireModal from '../../components/DirectHireModal';
+import ProviderDetailModal from '../../components/ProviderDetailModal';
 import { toast } from 'react-toastify';
 import { getSocket } from '../../utils/socket';
 import { getToken } from '../../utils/tokenUtils';
@@ -41,8 +42,8 @@ const mockProviders = [
 ];
 
 // --- 1. Updated ProviderCard Component ---
-// Now accepts 'onMessage' prop and renders the button
-function ProviderCard({ provider, onHire, onMessage }) {
+// Simplified card that opens modal on click
+function ProviderCard({ provider, onClick }) {
   const username = provider.username || `@${provider.firstName?.toLowerCase() || 'user'}`
   const rating = provider.rating || 0
   const name = provider.name || `${provider.firstName} ${provider.lastName}`.trim() || 'Service Provider'
@@ -61,11 +62,12 @@ function ProviderCard({ provider, onHire, onMessage }) {
       p={[6, 8]}
       backdropFilter="blur(10px)"
       width="320px"
-      height="450px" // Increased height to fit buttons comfortably
+      height="380px"
       cursor="pointer"
       position="relative"
       _hover={{ transform: 'translateY(-4px)', boxShadow: '0 8px 24px rgba(217, 123, 170, 0.3)' }}
       transition="all 0.3s ease"
+      onClick={onClick}
     >
       {/* Top section */}
       <HStack position="absolute" top="20px" left="20px" right="20px" justify="space-between">
@@ -74,16 +76,18 @@ function ProviderCard({ provider, onHire, onMessage }) {
       </HStack>
 
       {/* Profile Image */}
-      <Image 
+      <Box
+        as="img"
         position="absolute" 
         borderRadius="50%" 
         boxSize="90px" 
         top="70px" 
         left="50%" 
         transform="translateX(-50%)" 
-        src={provider.image || exampleProfilepic} 
+        src={provider.profilePicture || provider.image || exampleProfilepic} 
         alt={name}
         border="3px solid #d97baa"
+        style={{ objectFit: 'cover' }}
       />
 
       {/* Name */}
@@ -102,63 +106,20 @@ function ProviderCard({ provider, onHire, onMessage }) {
         {name}
       </Text>
 
-      {/* Specialties */}
+      {/* Specialties Preview */}
       <VStack position="absolute" top="200px" left="50%" transform="translateX(-50%)" spacing={0} align="center" w="80%">
         {specialties.slice(0, 2).map((specialty, idx) => (
           <Text key={idx} fontSize="xs" color="#aaa" noOfLines={1}>• {specialty}</Text>
         ))}
+        {specialties.length > 2 && (
+          <Text fontSize="xs" color="#d97baa" noOfLines={1}>+{specialties.length - 2} more</Text>
+        )}
       </VStack>
 
       {/* Info */}
-      <Text position="absolute" fontSize="sm" left="50%" bottom="80px" color="#aaa" transform="translateX(-50%)" textAlign="center" w="90%" noOfLines={1}>
+      <Text position="absolute" fontSize="sm" left="50%" bottom="20px" color="#aaa" transform="translateX(-50%)" textAlign="center" w="90%" noOfLines={1}>
         📍 {distance}mi | ${hourlyRate}/hr
       </Text>
-
-      {/* --- BUTTON SECTION --- */}
-      <HStack 
-        position="absolute" 
-        bottom="20px" 
-        left="50%" 
-        transform="translateX(-50%)" 
-        width="calc(100% - 40px)" 
-        spacing={3}
-      >
-        {/* Message Button */}
-        <Button
-          flex={1}
-          size="sm"
-          bg="transparent"
-          border="1px solid #d97baa"
-          color="#d97baa"
-          _hover={{ bg: 'rgba(217, 123, 170, 0.1)' }}
-          onClick={(e) => {
-            e.stopPropagation(); // Prevent card click
-            if (onMessage) {
-               // Use _id for real providers, fall back to id for mock ones
-               onMessage(provider._id || provider.id);
-            } else {
-               console.error("onMessage prop is missing");
-            }
-          }}
-        >
-          Message
-        </Button>
-        
-        {/* Hire Button */}
-        <Button
-          flex={1}
-          size="sm"
-          bg="#d97baa"
-          color="white"
-          _hover={{ bg: '#c55a8f' }}
-          onClick={(e) => {
-            e.stopPropagation();
-            onHire(provider);
-          }}
-        >
-          Hire
-        </Button>
-      </HStack>
     </Box>
   );
 }
@@ -177,6 +138,7 @@ export default function ServiceSeekerDashboard() {
   const [selectedJobId, setSelectedJobId] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDirectHireModalOpen, setIsDirectHireModalOpen] = useState(false)
+  const [isProviderDetailModalOpen, setIsProviderDetailModalOpen] = useState(false)
   const [selectedProvider, setSelectedProvider] = useState(null)
 
   useEffect(() => {
@@ -280,8 +242,28 @@ export default function ServiceSeekerDashboard() {
       const response = await fetch(`${API_URL}/users/providers`)
       const data = await response.json()
       if (response.ok && data.providers) {
-        setRealProviders(data.providers)
-        setFilteredProviders(data.providers)
+        // Debug: Log provider data to see if email/phone are included
+        console.log('Fetched providers:', data.providers.map(p => ({
+          name: `${p.firstName} ${p.lastName}`,
+          email: p.email,
+          phone: p.phone,
+          showEmail: p.privacySettings?.showEmail,
+          showPhone: p.privacySettings?.showPhone
+        })))
+        
+        // Map providers to ensure profilePicture is available as image for compatibility
+        const mappedProviders = data.providers.map(provider => ({
+          ...provider,
+          image: provider.profilePicture || provider.image, // Map profilePicture to image for backward compatibility
+          name: `${provider.firstName || ''} ${provider.lastName || ''}`.trim() || provider.username || 'Service Provider',
+          username: provider.username ? (provider.username.startsWith('@') ? provider.username : `@${provider.username}`) : `@${provider.firstName?.toLowerCase() || 'user'}`,
+          rating: provider.rating || 0,
+          hourlyRate: provider.hourlyRate || 0,
+          specialties: provider.specialties || [],
+          distance: provider.distance || 0
+        }))
+        setRealProviders(mappedProviders)
+        setFilteredProviders(mappedProviders)
       }
     } catch (err) {
       console.error('Failed to fetch providers:', err)
@@ -328,6 +310,11 @@ export default function ServiceSeekerDashboard() {
     setFilteredProviders(sorted)
   }
 
+  const handleProviderCardClick = (provider) => {
+    setSelectedProvider(provider)
+    setIsProviderDetailModalOpen(true)
+  }
+
   const handleHireProvider = (provider) => {
     setSelectedProvider(provider)
     setIsDirectHireModalOpen(true)
@@ -343,12 +330,13 @@ export default function ServiceSeekerDashboard() {
     <Box minH="100vh" bg="#0a0e27">
       <Box bg="white" borderBottom="1px solid #1a1f3a" py={4} px={8}>
           <HStack justify="space-between" align="center">
-            <Image 
+            <Box
+              as="img"
               src={comconnectLogo} 
               alt="ComConnect" 
               h={["80px", "80px", "80px"]}
               w="auto"
-              objectFit="contain"
+              style={{ objectFit: 'contain' }}
               cursor="pointer"
               onClick={() => window.location.reload()}
             />
@@ -500,11 +488,9 @@ export default function ServiceSeekerDashboard() {
             <Wrap spacingX="40px" spacingY="60px" justify="center" align="center" w="full">
               {filteredProviders.map((provider) => (
                 <WrapItem key={provider.id || provider._id}>
-                  {/* Pass the handler to the card */}
                   <ProviderCard 
                     provider={provider} 
-                    onHire={handleHireProvider} 
-                    onMessage={handleMessageProvider} 
+                    onClick={() => handleProviderCardClick(provider)}
                   />
                 </WrapItem>
               ))}
@@ -521,6 +507,17 @@ export default function ServiceSeekerDashboard() {
           setSelectedJobId(null);
         }}
         jobId={selectedJobId}
+      />
+
+      {/* Provider Detail Modal */}
+      <ProviderDetailModal
+        isOpen={isProviderDetailModalOpen}
+        onClose={() => {
+          setIsProviderDetailModalOpen(false);
+          setSelectedProvider(null);
+        }}
+        provider={selectedProvider}
+        onHire={handleHireProvider}
       />
 
       {/* Direct Hire Modal */}

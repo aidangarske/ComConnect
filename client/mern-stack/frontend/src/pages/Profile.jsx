@@ -13,6 +13,236 @@ import comconnectLogo from "../logo/COMCONNECT_Logo.png";
 
 const API_URL = 'http://localhost:8080/api';
 
+// Specialty icons mapping
+const SPECIALTY_ICONS = {
+  'manual labor': '🔨',
+  'tutoring': '📚',
+  'painting': '🎨',
+  'cleaning': '🧹',
+  'gardening': '🌱',
+  'automotive': '🚗',
+  'design': '🎨',
+  'assembly': '🔧',
+  'plumbing': '🚿',
+  'electrical': '⚡',
+  'photography': '📷',
+  'music': '🎵',
+  'writing': '✍️',
+  'construction': '🏗️',
+  'carpentry': '🪵',
+  'other': '⭐'
+};
+
+const AVAILABLE_SPECIALTIES = [
+  'manual labor',
+  'tutoring',
+  'painting',
+  'cleaning',
+  'gardening',
+  'automotive',
+  'design',
+  'assembly',
+  'plumbing',
+  'electrical',
+  'photography',
+  'music',
+  'writing',
+  'construction',
+  'carpentry',
+  'other'
+];
+
+// Specialty Selector Component with Dropdowns
+function SpecialtySelector({ selectedSpecialties, onSpecialtiesChange }) {
+  const [customSpecialty, setCustomSpecialty] = useState('');
+  const [showCustomInput, setShowCustomInput] = useState(false);
+
+  // Filter out invalid specialties (like bio text that might have been saved)
+  const validSpecialties = selectedSpecialties.filter(s => {
+    if (typeof s !== 'string') return false;
+    const sLower = s.toLowerCase().trim();
+    // Reject if too long (likely bio text)
+    if (sLower.length > 30) return false;
+    // Accept if it's a known specialty or a short custom one
+    return AVAILABLE_SPECIALTIES.includes(sLower) || sLower.length <= 20;
+  });
+
+  const handleAddSpecialty = (specialty) => {
+    if (!specialty || specialty === '') return;
+    
+    const specialtyLower = specialty.toLowerCase();
+    
+    // If "other" is selected, show custom input
+    if (specialtyLower === 'other') {
+      setShowCustomInput(true);
+      return;
+    }
+    
+    // Don't add if already selected
+    if (validSpecialties.includes(specialtyLower)) return;
+    
+    // Add the specialty
+    onSpecialtiesChange([...validSpecialties, specialtyLower]);
+  };
+
+  const handleAddCustomSpecialty = () => {
+    if (!customSpecialty.trim()) return;
+    
+    const customLower = customSpecialty.trim().toLowerCase();
+    
+    // Don't add if already selected
+    if (validSpecialties.includes(customLower)) {
+      setCustomSpecialty('');
+      setShowCustomInput(false);
+      return;
+    }
+    
+    // Add custom specialty
+    onSpecialtiesChange([...validSpecialties, customLower]);
+    setCustomSpecialty('');
+    setShowCustomInput(false);
+  };
+
+  const handleRemoveSpecialty = (specialtyToRemove) => {
+    onSpecialtiesChange(validSpecialties.filter(s => s !== specialtyToRemove));
+  };
+
+  // Get available specialties that aren't already selected
+  const availableOptions = AVAILABLE_SPECIALTIES.filter(s => !validSpecialties.includes(s));
+
+  return (
+    <Box w="full">
+      <VStack align="stretch" spacing={3}>
+        {/* Display selected specialties */}
+        {validSpecialties.length > 0 && (
+          <Box w="full">
+            <Text color="#999" fontSize="xs" mb={2}>Selected Specialties:</Text>
+            <HStack spacing={2} flexWrap="wrap">
+              {validSpecialties.map((specialty, idx) => (
+                <Badge 
+                  key={idx} 
+                  bg="#d97baa" 
+                  color="white" 
+                  px={3} 
+                  py={2} 
+                  borderRadius="full"
+                  fontSize="sm"
+                  display="flex"
+                  alignItems="center"
+                  gap={1}
+                >
+                  <Text fontSize="md">{SPECIALTY_ICONS[specialty] || '⭐'}</Text>
+                  <Text textTransform="capitalize">{specialty}</Text>
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    color="white"
+                    _hover={{ bg: 'rgba(255, 255, 255, 0.2)' }}
+                    onClick={() => handleRemoveSpecialty(specialty)}
+                    ml={1}
+                    minW="auto"
+                    h="auto"
+                    p={0}
+                    fontSize="xs"
+                  >
+                    ×
+                  </Button>
+                </Badge>
+              ))}
+            </HStack>
+          </Box>
+        )}
+
+        {/* Dropdown to add new specialty */}
+        <Box w="full">
+          <Box
+            as="select"
+            placeholder="Select a specialty to add"
+            value=""
+            onChange={(e) => {
+              if (e.target.value) {
+                handleAddSpecialty(e.target.value);
+                e.target.value = ''; // Reset dropdown
+              }
+            }}
+            bg="#1a1f3a"
+            border="1px solid #3a4456"
+            borderRadius="md"
+            color="white"
+            p={3}
+            fontSize="sm"
+            cursor="pointer"
+            _focus={{ borderColor: '#d97baa', outline: 'none' }}
+            _hover={{ borderColor: '#d97baa' }}
+            sx={{
+              '& option': {
+                background: '#1a1f3a',
+                color: 'white'
+              }
+            }}
+          >
+            <option value="" disabled style={{ background: '#1a1f3a', color: '#666' }}>
+              Select a specialty to add
+            </option>
+            {availableOptions.map((specialty) => (
+              <option key={specialty} value={specialty} style={{ background: '#1a1f3a', color: 'white' }}>
+                {SPECIALTY_ICONS[specialty] || '⭐'} {specialty.charAt(0).toUpperCase() + specialty.slice(1)}
+              </option>
+            ))}
+            <option value="other" style={{ background: '#1a1f3a', color: 'white' }}>
+              ⭐ Other (Custom)
+            </option>
+          </Box>
+        </Box>
+
+        {/* Custom specialty input (shown when "other" is selected) */}
+        {showCustomInput && (
+          <HStack spacing={2} w="full">
+            <Input
+              placeholder="Enter custom specialty"
+              value={customSpecialty}
+              onChange={(e) => setCustomSpecialty(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddCustomSpecialty();
+                }
+              }}
+              bg="#1a1f3a"
+              border="1px solid #3a4456"
+              borderRadius="md"
+              color="white"
+              _placeholder={{ color: '#666' }}
+              _focus={{ borderColor: '#d97baa' }}
+            />
+            <Button
+              bg="#d97baa"
+              color="white"
+              _hover={{ bg: '#c55a8f' }}
+              onClick={handleAddCustomSpecialty}
+              isDisabled={!customSpecialty.trim()}
+            >
+              Add
+            </Button>
+            <Button
+              bg="transparent"
+              border="1px solid #3a4456"
+              color="white"
+              _hover={{ bg: '#2a2f4a' }}
+              onClick={() => {
+                setShowCustomInput(false);
+                setCustomSpecialty('');
+              }}
+            >
+              Cancel
+            </Button>
+          </HStack>
+        )}
+      </VStack>
+    </Box>
+  );
+}
+
 export default function Profile() {
   const navigate = useNavigate()
   const { role, user } = useRole()
@@ -27,7 +257,11 @@ export default function Profile() {
   const [email, setEmail] = useState('')
   const [bio, setBio] = useState('')
   const [phone, setPhone] = useState('')
-  const [specialties, setSpecialties] = useState('')
+  const [specialties, setSpecialties] = useState([])
+  const [profilePicture, setProfilePicture] = useState('')
+  const [rating, setRating] = useState(0)
+  const [userId, setUserId] = useState('')
+  const [privacySettings, setPrivacySettings] = useState({ showEmail: false, showPhone: false })
 
   // Job management state (for seekers)
   const [myJobs, setMyJobs] = useState([])
@@ -42,12 +276,20 @@ export default function Profile() {
   // Fetch user profile on mount
   useEffect(() => {
     fetchProfile()
+    fetchPrivacySettings()
     if (role === 'seeker') {
       fetchMyJobs()
     } else if (role === 'provider') {
       fetchMyApplications()
     }
   }, [role])
+
+  // Re-fetch privacy settings when profile tab is active
+  useEffect(() => {
+    if (activeTab === 'profile') {
+      fetchPrivacySettings()
+    }
+  }, [activeTab])
 
   // Socket.io real-time updates for Profile page
   useEffect(() => {
@@ -204,7 +446,20 @@ export default function Profile() {
         setEmail(data.email || '')
         setBio(data.bio || '')
         setPhone(data.phone || '')
-        setSpecialties(data.specialties?.join(', ') || '')
+        // Filter out invalid specialties (like bio text that might have been saved)
+        // Only keep strings that are short (max 30 chars) and either match known specialties or are custom
+        const validSpecialties = (data.specialties || []).filter(s => {
+          if (typeof s !== 'string') return false;
+          const sLower = s.toLowerCase().trim();
+          // Reject if too long (likely bio text)
+          if (sLower.length > 30) return false;
+          // Accept if it's a known specialty or a short custom one
+          return AVAILABLE_SPECIALTIES.includes(sLower) || sLower.length <= 20;
+        });
+        setSpecialties(validSpecialties)
+        setProfilePicture(data.profilePicture || '')
+        setRating(data.rating || 0)
+        setUserId(data.id || '')
       } else {
         setError(data.error || 'Failed to load profile')
       }
@@ -213,6 +468,39 @@ export default function Profile() {
       console.error('Fetch profile error:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchPrivacySettings = async () => {
+    try {
+      const token = getToken()
+      if (!token) return
+
+      const response = await fetch(`${API_URL}/users/settings`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('Privacy settings fetched:', data.privacySettings)
+        if (data.privacySettings) {
+          const newSettings = {
+            showEmail: data.privacySettings.showEmail ?? false,
+            showPhone: data.privacySettings.showPhone ?? false
+          }
+          console.log('Setting privacy settings state:', newSettings)
+          setPrivacySettings(newSettings)
+        } else {
+          console.log('No privacy settings found, using defaults')
+          setPrivacySettings({ showEmail: false, showPhone: false })
+        }
+      } else {
+        console.error('Failed to fetch privacy settings:', response.status)
+      }
+    } catch (err) {
+      console.error('Failed to fetch privacy settings:', err)
     }
   }
 
@@ -288,7 +576,12 @@ export default function Profile() {
           email,
           bio,
           phone,
-          specialties: specialties.split(',').map(s => s.trim()).filter(s => s)
+          specialties: specialties.filter(s => {
+            if (typeof s !== 'string') return false;
+            const sLower = s.toLowerCase().trim();
+            return sLower.length <= 30 && (AVAILABLE_SPECIALTIES.includes(sLower) || sLower.length <= 20);
+          }),
+          profilePicture
         })
       })
 
@@ -297,6 +590,8 @@ export default function Profile() {
       if (response.ok) {
         setSuccess('Profile updated successfully!')
         setTimeout(() => setSuccess(''), 3000)
+        // Refresh privacy settings to update display
+        fetchPrivacySettings()
       } else {
         setError(data.error || 'Failed to update profile')
       }
@@ -418,6 +713,98 @@ export default function Profile() {
     }
   }
 
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file')
+      return
+    }
+
+    // Validate file size (max 3MB for original file - base64 will be ~33% larger)
+    if (file.size > 3 * 1024 * 1024) {
+      setError('Image size must be less than 3MB. Please compress or resize your image.')
+      return
+    }
+
+    setError('') // Clear any previous errors
+
+    // If file is small enough, use it directly without resizing
+    if (file.size < 500 * 1024) { // Less than 500KB
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        console.log('Small image loaded, setting profile picture')
+        setProfilePicture(reader.result)
+        setError('')
+      }
+      reader.onerror = () => {
+        setError('Failed to read image file')
+      }
+      reader.readAsDataURL(file)
+      return
+    }
+
+    // Resize image before converting to base64 to reduce size
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const img = new Image()
+      img.onload = () => {
+        // Create canvas to resize image
+        const canvas = document.createElement('canvas')
+        const MAX_WIDTH = 800
+        const MAX_HEIGHT = 800
+        let width = img.width
+        let height = img.height
+
+        // Calculate new dimensions
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width)
+            width = MAX_WIDTH
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width = Math.round((width * MAX_HEIGHT) / height)
+            height = MAX_HEIGHT
+          }
+        }
+
+        canvas.width = width
+        canvas.height = height
+
+        // Draw and compress image
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, width, height)
+
+        // Convert to base64 with compression (0.85 quality for JPEG)
+        const base64String = canvas.toDataURL('image/jpeg', 0.85)
+        console.log('Canvas conversion complete, base64 length:', base64String?.length)
+        if (base64String) {
+          setProfilePicture(base64String)
+          setError('')
+          console.log('Profile picture state updated')
+        } else {
+          // Fallback: use original image if canvas conversion fails
+          console.log('Canvas conversion failed, using original')
+          setProfilePicture(reader.result)
+          setError('')
+        }
+      }
+      img.onerror = () => {
+        // Fallback: use original file reader result
+        setProfilePicture(reader.result)
+        setError('')
+      }
+      img.src = reader.result
+    }
+    reader.onerror = () => {
+      setError('Failed to read image file')
+    }
+    reader.readAsDataURL(file)
+  }
+
   const getDashboardPath = () => {
     const token = getToken();
     if (token) {
@@ -454,6 +841,9 @@ export default function Profile() {
             <HStack spacing={6}>
               <Text color="#d97baa" fontSize="md" fontWeight="bold" cursor="pointer" onClick={() => navigate('/profile')}>
                 Profile
+              </Text>
+              <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/settings')}>
+                Settings
               </Text>
               <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/messages')}>
                 Messages
@@ -534,6 +924,110 @@ export default function Profile() {
                 </Box>
               )}
 
+              {/* Profile Picture Section */}
+              <VStack align="center" w="full" spacing={4}>
+                <Box position="relative">
+                  {profilePicture ? (
+                    <Box
+                      as="img"
+                      src={profilePicture}
+                      alt="Profile"
+                      borderRadius="full"
+                      w="150px"
+                      h="150px"
+                      objectFit="cover"
+                      border="3px solid #d97baa"
+                      display="block"
+                    />
+                  ) : (
+                    <Box
+                      borderRadius="full"
+                      boxSize="150px"
+                      bg="#1a1f3a"
+                      border="3px solid #d97baa"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <Text color="#666" fontSize="4xl">👤</Text>
+                    </Box>
+                  )}
+                </Box>
+                <Box>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    style={{ display: 'none' }}
+                    id="profile-picture-upload"
+                  />
+                  <Button
+                    as="label"
+                    htmlFor="profile-picture-upload"
+                    cursor="pointer"
+                    bg="transparent"
+                    border="1px solid #d97baa"
+                    color="#d97baa"
+                    _hover={{ bg: 'rgba(217, 123, 170, 0.1)' }}
+                    size="sm"
+                  >
+                    {profilePicture ? 'Change Picture' : 'Upload Picture'}
+                  </Button>
+                </Box>
+              </VStack>
+
+              {/* Rating Display */}
+              {rating > 0 && userId && (
+                <Box w="full" bg="#1a1f3a" p={4} borderRadius="md" border="1px solid #3a4456">
+                  <HStack justify="space-between" align="center">
+                    <VStack align="start" spacing={1}>
+                      <Text color="white" fontSize="md" fontWeight="bold">
+                        Rating: {rating.toFixed(1)} ⭐
+                      </Text>
+                      <Text color="#aaa" fontSize="sm">
+                        Based on reviews
+                      </Text>
+                    </VStack>
+                    <Button
+                      size="sm"
+                      bg="transparent"
+                      border="1px solid #d97baa"
+                      color="#d97baa"
+                      _hover={{ bg: 'rgba(217, 123, 170, 0.1)' }}
+                      onClick={() => navigate(`/ratings/${userId}`)}
+                    >
+                      View All Reviews
+                    </Button>
+                  </HStack>
+                </Box>
+              )}
+
+              {/* Specialties Display (for providers) */}
+              {role === 'provider' && specialties.length > 0 && (
+                <Box w="full" bg="#1a1f3a" p={4} borderRadius="md" border="1px solid #3a4456">
+                  <Text color="#999" fontSize="xs" fontWeight="bold" mb={3}>YOUR SPECIALTIES</Text>
+                  <HStack spacing={2} flexWrap="wrap">
+                    {specialties.map((specialty, idx) => (
+                      <Badge 
+                        key={idx} 
+                        bg="#d97baa" 
+                        color="white" 
+                        px={3} 
+                        py={2} 
+                        borderRadius="full"
+                        fontSize="sm"
+                        display="flex"
+                        alignItems="center"
+                        gap={1}
+                      >
+                        <Text fontSize="md">{SPECIALTY_ICONS[specialty] || '⭐'}</Text>
+                        <Text textTransform="capitalize">{specialty}</Text>
+                      </Badge>
+                    ))}
+                  </HStack>
+                </Box>
+              )}
+
               <VStack align="start" w="full" spacing={2}>
                 <Text color="#999" fontSize="sm" fontWeight="bold">Full Name *</Text>
                 <Input
@@ -550,6 +1044,16 @@ export default function Profile() {
                   fontSize="sm"
                 />
               </VStack>
+
+              {/* Display Email if privacy setting allows */}
+              {privacySettings?.showEmail && email ? (
+                <Box w="full" bg="#1a1f3a" p={4} borderRadius="md" border="1px solid #d97baa">
+                  <VStack align="start" spacing={1}>
+                    <Text color="#d97baa" fontSize="xs" fontWeight="bold">📧 Email (Public)</Text>
+                    <Text color="white" fontSize="md" fontWeight="medium">{email}</Text>
+                  </VStack>
+                </Box>
+              ) : null}
 
               <VStack align="start" w="full" spacing={2}>
                 <Text color="#999" fontSize="sm" fontWeight="bold">Email *</Text>
@@ -587,6 +1091,16 @@ export default function Profile() {
                 />
               </VStack>
 
+              {/* Display Phone if privacy setting allows */}
+              {privacySettings?.showPhone && phone ? (
+                <Box w="full" bg="#1a1f3a" p={4} borderRadius="md" border="1px solid #d97baa">
+                  <VStack align="start" spacing={1}>
+                    <Text color="#d97baa" fontSize="xs" fontWeight="bold">📞 Phone Number (Public)</Text>
+                    <Text color="white" fontSize="md" fontWeight="medium">{phone}</Text>
+                  </VStack>
+                </Box>
+              ) : null}
+
               <VStack align="start" w="full" spacing={2}>
                 <Text color="#999" fontSize="sm" fontWeight="bold">Phone Number</Text>
                 <Input
@@ -606,21 +1120,12 @@ export default function Profile() {
               </VStack>
 
               {role === 'provider' && (
-                <VStack align="start" w="full" spacing={2}>
-                  <Text color="#999" fontSize="sm" fontWeight="bold">Specialties (comma-separated)</Text>
-                  <Textarea
-                    placeholder="e.g., Plumbing, Electrical, Carpentry"
-                    value={specialties}
-                    onChange={(e) => setSpecialties(e.target.value)}
-                    bg="#1a1f3a"
-                    border="1px solid #3a4456"
-                    borderRadius="md"
-                    color="white"
-                    _placeholder={{ color: '#666' }}
-                    _focus={{ borderColor: '#d97baa' }}
-                    py={3}
-                    fontSize="sm"
-                    minH="80px"
+                <VStack align="start" w="full" spacing={3}>
+                  <Text color="#999" fontSize="sm" fontWeight="bold">Specialties</Text>
+                  <Text color="#666" fontSize="xs">Select your areas of expertise</Text>
+                  <SpecialtySelector 
+                    selectedSpecialties={specialties} 
+                    onSpecialtiesChange={setSpecialties} 
                   />
                 </VStack>
               )}
@@ -846,12 +1351,32 @@ export default function Profile() {
                         {/* Hired Provider */}
                         {job.selectedProvider && (
                           <Box w="full" pt={4} borderTop="1px solid #4CAF50">
-                            <Text color="white" fontWeight="bold" mb={2}>Hired Provider</Text>
-                            <Text color="#aaa">
-                              {typeof job.selectedProvider === 'object'
-                                ? `${job.selectedProvider.firstName} ${job.selectedProvider.lastName}`.trim()
-                                : 'Provider'}
-                            </Text>
+                            <HStack justify="space-between" align="center">
+                              <VStack align="start" spacing={1}>
+                                <Text color="white" fontWeight="bold">Hired Provider</Text>
+                                <Text color="#aaa">
+                                  {typeof job.selectedProvider === 'object'
+                                    ? `${job.selectedProvider.firstName} ${job.selectedProvider.lastName}`.trim()
+                                    : 'Provider'}
+                                </Text>
+                              </VStack>
+                              {job.status === 'completed' && (
+                                <Button
+                                  size="sm"
+                                  bg="#d97baa"
+                                  color="white"
+                                  _hover={{ bg: '#c55a8f' }}
+                                  onClick={() => {
+                                    const providerId = typeof job.selectedProvider === 'object'
+                                      ? job.selectedProvider._id || job.selectedProvider
+                                      : job.selectedProvider
+                                    navigate(`/ratings/submit/${job._id}/${providerId}`)
+                                  }}
+                                >
+                                  Rate Provider
+                                </Button>
+                              )}
+                            </HStack>
                           </Box>
                         )}
                       </VStack>
@@ -979,9 +1504,27 @@ export default function Profile() {
 
                         {myApp && (
                           <Box w="full" pt={4} borderTop="1px solid #3a4456">
-                            <Text color="#aaa" fontSize="sm">
-                              Applied on: {new Date(myApp.appliedAt).toLocaleDateString()}
-                            </Text>
+                            <VStack align="start" spacing={3} w="full">
+                              <Text color="#aaa" fontSize="sm">
+                                Applied on: {new Date(myApp.appliedAt).toLocaleDateString()}
+                              </Text>
+                              {isHired && job.status === 'completed' && job.postedBy && (
+                                <Button
+                                  size="sm"
+                                  bg="#d97baa"
+                                  color="white"
+                                  _hover={{ bg: '#c55a8f' }}
+                                  onClick={() => {
+                                    const seekerId = typeof job.postedBy === 'object'
+                                      ? job.postedBy._id || job.postedBy
+                                      : job.postedBy;
+                                    navigate(`/ratings/submit/${job._id}/${seekerId}`);
+                                  }}
+                                >
+                                  Rate Seeker
+                                </Button>
+                              )}
+                            </VStack>
                           </Box>
                         )}
                       </VStack>

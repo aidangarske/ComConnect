@@ -111,6 +111,37 @@ const userSchema = new mongoose.Schema(
       default: 0
     },
 
+    // Settings
+    notificationPreferences: {
+      emailNotifications: {
+        type: Boolean,
+        default: true
+      },
+      jobAlerts: {
+        type: Boolean,
+        default: true
+      },
+      messageNotifications: {
+        type: Boolean,
+        default: true
+      }
+    },
+    privacySettings: {
+      profileVisibility: {
+        type: String,
+        enum: ['public', 'private'],
+        default: 'public'
+      },
+      showEmail: {
+        type: Boolean,
+        default: false
+      },
+      showPhone: {
+        type: Boolean,
+        default: false
+      }
+    },
+
     // Account Status
     isVerified: {
       type: Boolean,
