@@ -16,6 +16,7 @@ export default function CreateJob() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [budget, setBudget] = useState('')
+  const [estimatedDuration, setEstimatedDuration] = useState('')
   const [category, setCategory] = useState('other')
 
   const handleCreateJob = async () => {
@@ -26,6 +27,11 @@ export default function CreateJob() {
 
     if (isNaN(budget) || parseFloat(budget) <= 0) {
       setError('Budget must be a valid positive number')
+      return
+    }
+
+    if (isNaN(estimatedDuration) || parseFloat(estimatedDuration) <= 0) {
+      setError('Estimated Duration must be a valid positive number')
       return
     }
 
@@ -50,6 +56,7 @@ export default function CreateJob() {
           title,
           description,
           budget: parseFloat(budget),
+          estimatedDuration: parseFloat(estimatedDuration),
           category
         })
       })
@@ -61,6 +68,7 @@ export default function CreateJob() {
         setTitle('')
         setDescription('')
         setBudget('')
+        setEstimatedDuration('')
         setCategory('other')
         setTimeout(() => {
           navigate('/dashboard-seeker')
@@ -97,7 +105,7 @@ export default function CreateJob() {
             objectFit="contain"
             maxW="100%"
             cursor="pointer"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/dashboard-seeker')}
           />
           <HStack spacing={6}>
             <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/profile')}>
@@ -222,6 +230,27 @@ export default function CreateJob() {
                 type="number"
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
+                bg="#1a1f3a"
+                border="1px solid #3a4456"
+                borderRadius="md"
+                color="white"
+                _placeholder={{ color: '#666' }}
+                _focus={{ borderColor: '#d97baa' }}
+                py={3}
+                fontSize="sm"
+              />
+            </VStack>
+
+            {/* Estimated Duration */}
+            <VStack align="start" w="full" spacing={2}>
+              <Text color="#999" fontSize="sm" fontWeight="bold">
+                Estimated Duration (hrs) *
+              </Text>
+              <Input
+                placeholder="e.g., 1.5"
+                type="number"
+                value={estimatedDuration}
+                onChange={(e) => setEstimatedDuration(e.target.value)}
                 bg="#1a1f3a"
                 border="1px solid #3a4456"
                 borderRadius="md"
