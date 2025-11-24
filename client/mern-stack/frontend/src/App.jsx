@@ -37,6 +37,7 @@ function App() {
         <Route path="/hire/:jobId/:providerId" element={<HireProvider />} />
 
         <Route path="/admin" element={<AdminDashboard />}>
+          <Route index element={<ContentManagement />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="reports" element={<ReportsView />} />
           <Route path="settings" element={<AdminSettings />} />

@@ -1,6 +1,8 @@
 import { useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { Box, HStack, VStack, Text, Button, Heading, Image } from '@chakra-ui/react';
 import comconnectLogo from "../../logo/COMCONNECT_Logo.png"; 
+import UserManagement from '../admin/UserManagement';       
+import ContentManagement from '../admin/ContentManagement'; 
 
 export default function AdminDashboard() {
   const navigate = useNavigate();

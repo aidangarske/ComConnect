@@ -6,10 +6,11 @@ import {
   HStack,
   Grid,
   Text,
-  Badge,
   Button,
 } from '@chakra-ui/react';
-import { mockServices } from './mockData';
+
+// Make sure this matches your backend address
+const API_BASE_URL = 'http://localhost:8080/api'; 
 
 const ServiceList = ({ items, showActions, onUpdateStatus }) => (
   <VStack w="full" minW="700px">
@@ -32,7 +33,7 @@ const ServiceList = ({ items, showActions, onUpdateStatus }) => (
 
     {items.map((service) => (
       <Grid
-        key={service.id}
+        key={service.id || service._id} 
         w="full"
         templateColumns={showActions ? '2fr 1fr 1fr 2fr' : '2fr 1fr 1fr 1fr'}
         gap={4}
@@ -55,7 +56,7 @@ const ServiceList = ({ items, showActions, onUpdateStatus }) => (
               bg="green.500"
               color="white"
               _hover={{ bg: 'green.600' }}
-              onClick={() => onUpdateStatus(service.id, 'approved')}
+              onClick={() => onUpdateStatus(service.id || service._id, 'approved')}
             >
               Approve
             </Button>
@@ -64,7 +65,7 @@ const ServiceList = ({ items, showActions, onUpdateStatus }) => (
               bg="red.600"
               color="white"
               _hover={{ bg: 'red.700' }}
-              onClick={() => onUpdateStatus(service.id, 'rejected')}
+              onClick={() => onUpdateStatus(service.id || service._id, 'rejected')}
             >
               Reject
             </Button>
@@ -78,10 +79,12 @@ const ServiceList = ({ items, showActions, onUpdateStatus }) => (
 export default function ContentManagement() {
   const [services, setServices] = useState([]);
   const [activeTab, setActiveTab] = useState('pending');
+  // Crash Fix 1: State is defined here
   const [isLoading, setIsLoading] = useState(true);
 
    const fetchServices = async () => {
-    setLoading(true);
+    // Crash Fix 2: Changed 'setLoading' to 'setIsLoading'
+    setIsLoading(true); 
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/admin/content`, {
@@ -89,6 +92,7 @@ export default function ContentManagement() {
       });
       
       if (response.status === 401 || response.status === 403) {
+         console.error("Unauthorized");
          return;
       }
 
@@ -101,13 +105,15 @@ export default function ContentManagement() {
     } catch (error) {
       console.error('Error fetching content:', error);
     } finally {
-      setLoading(false);
+      // Crash Fix 3: Changed 'setLoading' to 'setIsLoading'
+      setIsLoading(false); 
     }
   };
 
   useEffect(() => {
     fetchServices();
   }, []);
+
   const pendingServices = services.filter(s => s.status === 'pending');
   const approvedServices = services.filter(s => s.status === 'open' || s.status === 'approved');
 
@@ -128,13 +134,15 @@ export default function ContentManagement() {
       const data = await response.json();
 
       if (data.success) {
-        toast({ title: `Job ${newStatus} successfully`, status: "success", duration: 3000 });
+        // CHANGED: Used alert instead of toast
+        alert(`Job ${newStatus} successfully`);
         fetchServices();
       } else {
-        toast({ title: data.message || "Update failed", status: "error", duration: 3000 });
+        alert(data.message || "Update failed");
       }
     } catch (error) {
-      toast({ title: "Server error", status: "error", duration: 3000 });
+      console.error(error);
+      alert("Server error");
     }
   };
 
@@ -165,19 +173,25 @@ export default function ContentManagement() {
         </HStack>
 
         <Box w="full" pt={4}>
-          {activeTab === 'pending' && (
-            <ServiceList
-              items={pendingServices}
-              showActions={true}
-              onUpdateStatus={handleUpdateStatus}
-            />
-          )}
-          {activeTab === 'approved' && (
-            <ServiceList
-              items={approvedServices}
-              showActions={false}
-              onUpdateStatus={handleUpdateStatus}
-            />
+          {isLoading ? (
+             <Text color="white">Loading...</Text>
+          ) : (
+            <>
+              {activeTab === 'pending' && (
+                <ServiceList
+                  items={pendingServices}
+                  showActions={true}
+                  onUpdateStatus={handleUpdateStatus}
+                />
+              )}
+              {activeTab === 'approved' && (
+                <ServiceList
+                  items={approvedServices}
+                  showActions={false}
+                  onUpdateStatus={handleUpdateStatus}
+                />
+              )}
+            </>
           )}
         </Box>
       </VStack>
