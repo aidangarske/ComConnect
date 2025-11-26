@@ -26,6 +26,7 @@ router.put('/content/:id/status', async (req, res) => {
     const { id } = req.params;
     const { status } = req.body; 
 
+    // 1. Update the job
     const updatedJob = await Job.findByIdAndUpdate(
       id, 
       { status: status },
@@ -33,6 +34,22 @@ router.put('/content/:id/status', async (req, res) => {
     );
 
     if (!updatedJob) return res.status(404).json({ success: false, message: 'Job not found' });
+
+    // 2. SOCKET EMISSION (Real-time update)
+    const io = req.app.locals.io;
+    if (io) {
+      // We need to populate the user info so the frontend card renders correctly
+      const populatedJob = await Job.findById(updatedJob._id)
+        .populate('postedBy', 'username firstName lastName rating');
+
+      // If we just Approved it, it's effectively "Created" for the Service Providers
+      if (status === 'approved') {
+        io.emit('jobCreated', { job: populatedJob });
+      }
+      
+      // Also emit update for anyone else listening
+      io.emit('jobUpdated', { jobId: id, job: populatedJob });
+    }
 
     res.status(200).json({ success: true, message: `Job ${status} successfully`, data: updatedJob });
   } catch (error) {
@@ -62,6 +79,11 @@ router.delete('/users/:id', async (req, res) => {
     const { id } = req.params;
     const deletedUser = await User.findByIdAndDelete(id);
     if (!deletedUser) return res.status(404).json({ success: false, message: 'User not found' });
+    
+    // NEW: Emit event so user lists update automatically
+    const io = req.app.locals.io;
+    if (io) io.emit('userDeleted', { userId: id });
+
     res.status(200).json({ success: true, message: 'User deleted successfully' });
   } catch (error) {
     console.error('Admin Delete User Error:', error);
@@ -70,7 +92,7 @@ router.delete('/users/:id', async (req, res) => {
 });
 
 // ==========================================
-// 3. MODERATION ACTIONS (BAN/SUSPEND) <--- THIS WAS MISSING
+// 3. MODERATION ACTIONS (BAN/SUSPEND)
 // ==========================================
 
 // BAN a user
@@ -85,7 +107,7 @@ router.post('/users/:id/ban', async (req, res) => {
         isBanned: true,
         banReason: reason,
         bannedAt: new Date(),
-        isSuspended: false, // Clear suspension if banned
+        isSuspended: false, 
         suspensionReason: null,
         suspendedUntil: null
       },
@@ -93,6 +115,14 @@ router.post('/users/:id/ban', async (req, res) => {
     );
 
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    // NEW: Force logout the banned user if they are online
+    const io = req.app.locals.io;
+    if (io) {
+        // Emit a specific event that your frontend App.js could listen to for force-logout
+        io.emit('userBanned', { userId: id, reason });
+    }
+
     res.json({ success: true, message: 'User banned successfully', data: user });
   } catch (error) {
     console.error('Ban Error:', error);
@@ -112,6 +142,10 @@ router.post('/users/:id/unban', async (req, res) => {
     );
 
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    
+    const io = req.app.locals.io;
+    if (io) io.emit('userUpdated', { userId: id, user });
+
     res.json({ success: true, message: 'User unbanned successfully', data: user });
   } catch (error) {
     console.error('Unban Error:', error);
@@ -134,7 +168,7 @@ router.post('/users/:id/suspend', async (req, res) => {
         isSuspended: true,
         suspensionReason: reason,
         suspendedUntil: suspendedUntil,
-        isBanned: false, // Clear ban if suspended
+        isBanned: false, 
         banReason: null,
         bannedAt: null
       },
@@ -142,6 +176,10 @@ router.post('/users/:id/suspend', async (req, res) => {
     );
 
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    
+    const io = req.app.locals.io;
+    if (io) io.emit('userSuspended', { userId: id, reason, days });
+
     res.json({ success: true, message: `User suspended for ${days} days`, data: user });
   } catch (error) {
     console.error('Suspend Error:', error);
@@ -161,6 +199,10 @@ router.post('/users/:id/unsuspend', async (req, res) => {
     );
 
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const io = req.app.locals.io;
+    if (io) io.emit('userUpdated', { userId: id, user });
+
     res.json({ success: true, message: 'User unsuspended successfully', data: user });
   } catch (error) {
     console.error('Unsuspend Error:', error);
