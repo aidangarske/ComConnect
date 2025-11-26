@@ -48,7 +48,7 @@ async function populateApplications(job) {
  */
 router.post('/', authenticate, authorize('seeker', 'admin'), async (req, res) => {
   try {
-    const { title, description, category, budget, budgetType, deadline, estimatedDuration, address, city } = req.body;
+    const { title, description, category, budget, budgetType, deadline, estimatedDuration, address, city, isRemote } = req.body;
 
     // Validate required fields - only title, description, and budget are required
     if (!title || !description || !budget) {
@@ -67,11 +67,13 @@ router.post('/', authenticate, authorize('seeker', 'admin'), async (req, res) =>
       budgetType: budgetType || 'fixed',
       deadline: deadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
       estimatedDuration: parseFloat(estimatedDuration) || 1, // Default to 1 hour if not provided
-      address: address || '',
-      city: city || '',
+      address: address || (user.address ? user.address.street : '') || '',
+      city: city || (user.address ? user.address.city : '') || '',
+      isRemote: isRemote || false,
       postedBy: req.user.id,
       posterName: `${user.firstName} ${user.lastName}`.trim() || user.username,
-      posterRating: user.rating
+      posterRating: user.rating,
+      location: user.location || { type: 'Point', coordinates: [0, 0] },
     });
 
     await newJob.save();
@@ -186,7 +188,7 @@ router.post('/direct-hire', authenticate, authorize('seeker', 'admin'), async (r
  */
 router.get('/', async (req, res) => {
   try {
-    const { category, status = 'approved', sort = 'newest', limit = 20 } = req.query;
+    const { category, status = 'open', sort = 'newest', limit = 20 } = req.query;
 
     let queryStatus = status;
     if (queryStatus === 'pending' || queryStatus === 'rejected') {

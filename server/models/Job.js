@@ -76,6 +76,12 @@ export const jobSchema = new mongoose.Schema(
         default: [0, 0]
       }
     },
+
+    isRemote: {
+      type: Boolean,
+      default: false
+    },
+    
     address: String,
     city: String,
 
@@ -92,7 +98,7 @@ export const jobSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ['pending', 'approved', 'rejected', 'open', 'in-progress', 'completed', 'cancelled'],
-      default: 'pending'
+      default: 'open'
     },
 
     // Applications
