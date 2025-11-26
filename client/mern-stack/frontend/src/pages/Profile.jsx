@@ -8,6 +8,7 @@ import { startChatWithRecipient } from '../utils/chatUtils.js'
 import JobDetailModal from '../components/JobDetailModal'
 import { getToken } from '../utils/tokenUtils'
 import { getSocket } from '../utils/socket'
+import LocationSelector from '../components/LocationSelector'; 
 
 import comconnectLogo from "../logo/COMCONNECT_Logo.png";
 
@@ -257,6 +258,7 @@ export default function Profile() {
   const [email, setEmail] = useState('')
   const [bio, setBio] = useState('')
   const [phone, setPhone] = useState('')
+  const [locationAddress, setLocationAddress] = useState('')
   const [specialties, setSpecialties] = useState([])
   const [profilePicture, setProfilePicture] = useState('')
   const [rating, setRating] = useState(0)
@@ -446,6 +448,10 @@ export default function Profile() {
         setEmail(data.email || '')
         setBio(data.bio || '')
         setPhone(data.phone || '')
+
+        if (data.address && data.address.city) {
+          setLocationAddress(data.address.city);
+        }
         // Filter out invalid specialties (like bio text that might have been saved)
         // Only keep strings that are short (max 30 chars) and either match known specialties or are custom
         const validSpecialties = (data.specialties || []).filter(s => {
@@ -1088,6 +1094,23 @@ export default function Profile() {
                   py={3}
                   fontSize="sm"
                   minH="100px"
+                />
+              </VStack>
+
+              <VStack align="start" w="full" spacing={2}>
+                <Text color="#999" fontSize="sm" fontWeight="bold">Location</Text>
+                  {locationAddress && (
+                <Text color="white" fontSize="sm" mb={1}>
+                  📍 Currently set to: <Text as="span" color="#d97baa">{locationAddress}</Text>
+                </Text>
+                  )}
+                    <LocationSelector 
+                    onLocationSave={(updatedUser) => {
+                    // Update the UI immediately when they pick a new place
+                    if (updatedUser && updatedUser.address) {
+                      setLocationAddress(updatedUser.address.city); 
+                    }
+                  }} 
                 />
               </VStack>
 

@@ -13,6 +13,19 @@ import exampleProfilepic from "../../profile_picture/OIP.jpg";
 
 const API_URL = 'http://localhost:8080/api';
 
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+  
+  const R = 3959; // Radius of Earth in miles
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return (R * c).toFixed(1); // Returns string like "5.2"
+}
+
 /**
  * Mock job postings data - sample jobs that service providers can apply to
  * Each job includes: title, price, distance, time estimate, category, poster info, rating
@@ -130,8 +143,22 @@ function JobCard({ job, onApply, onCardClick, user }) {
   const rating = job.rating || job.posterRating || 0
   const name = job.name || job.posterName || 'Unknown'
   const poster = job.poster || `@${job.posterName?.toLowerCase().replace(' ', '') || 'user'}`
+
+  const formatDistance = (dist) => {
+    if (job.isRemote) return 'Remote'; 
+    if (!dist) return 'Location Unknown'; 
+    const numDist = parseFloat(dist);
+    if (numDist > 10000) return 'Location Unknown'; 
+    return `${numDist.toFixed(1)} miles`;
+  };
+
+  const formatDuration = (duration) => {
+    if (!duration) return '';
+    const durString = duration.toString();
+    if (/[a-zA-Z]/.test(durString)) return durString;
+    return `${durString} hrs`;
+  };
   
-  // Check if user has already applied
   const hasApplied = user && job.applications?.some(
     app => (app.providerId?._id || app.providerId) === user.id
   );
@@ -161,6 +188,7 @@ function JobCard({ job, onApply, onCardClick, user }) {
         top="20px" 
         color="white"
         maxW="260px"
+        noOfLines={2}
       >
         {title}
       </Text>
@@ -212,16 +240,32 @@ function JobCard({ job, onApply, onCardClick, user }) {
       {/* Bottom section: Job category badge, distance, and time estimate */}
       <VStack 
         position="absolute" 
-        bottom="80px" 
-        left="50%" 
-        transform="translateX(-50%)" 
-        spacing={1}
-        align="center"
+        bottom="85px" 
+        left="0" 
+        right="0" 
+        spacing={3}
       >
-        <Badge bg="#3a3f5e" color="white" px={3} py={1} borderRadius="full">
+        <Badge 
+          bg="rgba(217, 123, 170, 0.15)" 
+          color="#d97baa" 
+          px={3} 
+          py={1} 
+          borderRadius="full" 
+          fontSize="xs"
+          border="1px solid rgba(217, 123, 170, 0.3)"
+          textTransform="capitalize"
+        >
           {job.category}
         </Badge>
-        <Text fontSize="sm" color="#aaa">{job.distance} miles | {job.time}</Text>
+        <HStack spacing={2} color="gray.400" fontSize="xs" fontWeight="medium">
+          <Text>📍 {formatDistance(job.distance)}</Text>
+          {(job.time || job.estimatedDuration) && (
+            <>
+              <Text color="gray.600">•</Text>
+              <Text>⏱ {formatDuration(job.time || job.estimatedDuration)}</Text>
+            </>
+          )}
+        </HStack>
       </VStack>
 
       {/* Action button - click to apply for this job */}
@@ -260,7 +304,7 @@ export default function ServiceProviderDashboard() {
   const [filteredJobs, setFilteredJobs] = useState([])
   const [realJobs, setRealJobs] = useState([])
   const [loading, setLoading] = useState(false)
-  const [selectedJobId, setSelectedJobId] = useState(null)
+  const [selectedJob, setSelectedJob] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [hireRequests, setHireRequests] = useState([])
   const [loadingHireRequests, setLoadingHireRequests] = useState(false)
@@ -334,11 +378,42 @@ export default function ServiceProviderDashboard() {
   const fetchJobs = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`${API_URL}/jobs`)
+      let queryParams = ''
+      let userCoordinates = null
+      const token = getToken()
+      if (token) {
+        try {
+          const profileResponse = await fetch(`${API_URL}/users/profile`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const profileData = await profileResponse.json()
+          
+          if (profileData.location && profileData.location.coordinates) {
+            const [lng, lat] = profileData.location.coordinates
+            if (lat !== 0 || lng !== 0) {
+              userCoordinates = [lng, lat]
+              queryParams = `?lat=${lat}&lng=${lng}&distance=50`
+            }
+          }
+        } catch (err) {
+          console.warn("Could not fetch location, defaulting to all jobs")
+        }
+      }
+      const response = await fetch(`${API_URL}/jobs${queryParams}`)
       const data = await response.json()
       if (response.ok && data.jobs) {
-        setRealJobs(data.jobs)
-        setFilteredJobs(data.jobs)
+        const jobsWithDistance = data.jobs.map(job => {
+          let dist = null;
+          if (userCoordinates && job.location && job.location.coordinates) {
+            const [userLng, userLat] = userCoordinates;
+            const [jobLng, jobLat] = job.location.coordinates;
+            dist = calculateDistance(userLat, userLng, jobLat, jobLng);
+          }
+          return { ...job, distance: dist };
+        });
+
+        setRealJobs(jobsWithDistance);
+        setFilteredJobs(jobsWithDistance);
       }
     } catch (err) {
       console.error('Failed to fetch jobs:', err)
@@ -657,7 +732,7 @@ export default function ServiceProviderDashboard() {
                     job={job} 
                     onApply={handleApplyJob}
                     onCardClick={(job) => {
-                      setSelectedJobId(job._id || job.id);
+                      setSelectedJob(job); 
                       setIsModalOpen(true);
                     }}
                     user={user}
@@ -669,14 +744,10 @@ export default function ServiceProviderDashboard() {
         </VStack>
       </Box>
 
-      {/* Job Detail Modal */}
-      <JobDetailModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedJobId(null);
-        }}
-        jobId={selectedJobId}
+      <JobDetailModal 
+        isOpen={isModalOpen} 
+        onClose={() => { setIsModalOpen(false); setSelectedJob(null); }} 
+        jobId={selectedJob?._id || selectedJob?.id} // <--- THIS WAS THE FIX
       />
     </Box>
   )

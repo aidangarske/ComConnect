@@ -7,6 +7,44 @@ import comconnectLogo from "../logo/COMCONNECT_Logo.png";
 
 const API_URL = 'http://localhost:8080/api';
 
+const CustomCheckbox = ({ isChecked, onChange, label }) => (
+  <HStack 
+    w="full" 
+    bg="#1a1f3a"
+    border="1px solid" 
+    borderColor={isChecked ? "#d97baa" : "#3a4456"} 
+    borderRadius="md" 
+    px={4} 
+    py={3} 
+    cursor="pointer" 
+    onClick={() => onChange(!isChecked)} 
+    spacing={3} 
+    align="center"
+    userSelect="none"
+    transition="all 0.2s"
+    _hover={{ borderColor: '#d97baa' }} 
+  >
+    <Box
+      w="20px"
+      h="20px"
+      border="1px solid"
+      borderColor={isChecked ? "#d97baa" : "#555"}
+      bg={isChecked ? "#d97baa" : "transparent"}
+      borderRadius="4px"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      transition="all 0.2s"
+    >
+      {isChecked && <Text color="white" fontSize="xs" fontWeight="bold">✓</Text>}
+    </Box>
+  
+    <Text color="white" fontSize="sm">
+      {label}
+    </Text>
+  </HStack>
+);
+
 export default function CreateJob() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
@@ -19,6 +57,7 @@ export default function CreateJob() {
   const [budget, setBudget] = useState('')
   const [estimatedDuration, setEstimatedDuration] = useState('')
   const [category, setCategory] = useState('other')
+  const [isRemote, setIsRemote] = useState(false)
 
   const handleCreateJob = async () => {
     if (!title || !description || !budget) {
@@ -58,7 +97,8 @@ export default function CreateJob() {
           description,
           budget: parseFloat(budget),
           estimatedDuration: parseFloat(estimatedDuration),
-          category
+          category,
+          isRemote
         })
       })
 
@@ -262,6 +302,12 @@ export default function CreateJob() {
                 fontSize="sm"
               />
             </VStack>
+
+            <CustomCheckbox 
+              isChecked={isRemote}
+              onChange={setIsRemote}
+              label="This is a remote job (can be done from anywhere)"
+            />
 
             {/* Action Buttons */}
             <HStack spacing={4} w="full" pt={4}>

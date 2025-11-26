@@ -7,7 +7,8 @@ import {
   Text,
   Badge,
   Box,
-  Spinner
+  Spinner,
+  Image
 } from '@chakra-ui/react';
 import { useRole } from './RoleContext';
 import { toast } from 'react-toastify';
@@ -292,6 +293,27 @@ export default function JobDetailModal({ isOpen, onClose, jobId }) {
                   <Text fontSize="md">{job.estimatedDuration}</Text>
                 </VStack>
               </HStack>
+
+              <Box w="full" p={3} bg="rgba(255,255,255,0.05)" borderRadius="md" border="1px solid #3a4456">
+                <HStack spacing={3}>
+                  <Text fontSize="xl">📍</Text>
+                  <Box>
+                    <Text fontSize="xs" color="#aaa" fontWeight="bold">LOCATION</Text>
+                    <Text fontWeight="bold" color="white">
+                      {job.isRemote ? (
+                        <Badge colorScheme="pink" variant="solid" bg="#d97baa">REMOTE WORK</Badge>
+                      ) : (
+                        // Show city/address from database. Note: We don't calculate distance here because
+                        // we fetched by ID and don't have user coordinates in this component's scope.
+                        job.city || job.address || "Location provided upon hiring"
+                      )}
+                    </Text>
+                  </Box>
+                </HStack>
+              </Box>
+              {/* ----------------------------------- */}
+
+              <Box w="full" h="1px" bg="#3a4456" my={4} />
 
               {/* Poster Info */}
               {job.postedBy && (

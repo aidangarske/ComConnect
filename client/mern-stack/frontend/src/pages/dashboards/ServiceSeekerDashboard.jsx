@@ -44,6 +44,15 @@ const mockProviders = [
   },
   // ... add other mock providers if you wish
 ];
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+  const R = 3959; 
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return (R * c).toFixed(1);
+}
 
 // --- 1. Updated ProviderCard Component ---
 // Simplified card that opens modal on click
@@ -56,7 +65,14 @@ function ProviderCard({ provider, onClick }) {
     : ['Professional Services']
     /*List of skills to select from the skills menu */
   const hourlyRate = provider.hourlyRate || 0
-  const distance = provider.distance || 0
+  const distance = provider.distance;
+  const formatDistance = (dist) => {
+    if (dist === null || dist === undefined || dist === '') return 'Location N/A';
+    const numDist = parseFloat(dist);
+    // If > 12000 miles, assume default 0,0 coordinates (Null Island)
+    if (numDist > 12000) return 'Location N/A'; 
+    return `${numDist.toFixed(1)} miles`;
+  };
   
   return (
     <Box
@@ -123,7 +139,7 @@ function ProviderCard({ provider, onClick }) {
 
       {/* Info */}
       <Text position="absolute" fontSize="sm" left="50%" bottom="20px" color="#aaa" transform="translateX(-50%)" textAlign="center" w="90%" noOfLines={1}>
-        📍 {distance}mi | ${hourlyRate}/hr
+        📍 {formatDistance(distance)} | ${hourlyRate}/hr
       </Text>
     </Box>
   );
@@ -342,70 +358,59 @@ useEffect(() => {
 const fetchProviders = async () => {
   try {
     setLoadingProviders(true);
+    const token = getToken();
+    let userCoordinates = null;
+
+    if (token) {
+        try {
+            const profileRes = await fetch(`${API_URL}/users/profile`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const profileData = await profileRes.json();
+            if (profileData.location?.coordinates) {
+                const [lng, lat] = profileData.location.coordinates;
+                if (lat !== 0 || lng !== 0) userCoordinates = [lng, lat];
+            }
+        } catch(e) {}
+      } 
 
     const response = await fetch(`${API_URL}/users/providers`);
     const data = await response.json();
 
     if (response.ok && data.providers) {
-      // Debug: Log provider data to see if email/phone are included
-      console.log(
-        'Fetched providers:',
-        data.providers.map((p) => ({
-          name: `${p.firstName} ${p.lastName}`,
-          email: p.email,
-          phone: p.phone,
-          showEmail: p.privacySettings?.showEmail,
-          showPhone: p.privacySettings?.showPhone,
-        }))
-      );
+        const mappedProviders = data.providers.map((provider) => {
+          let specialties = [];
+          if (Array.isArray(provider.specialties)) specialties = provider.specialties;
+          else if (typeof provider.specialties === 'string' && provider.specialties.trim().length > 0) {
+            specialties = provider.specialties.split(',').map((s) => s.trim()).filter(Boolean);
+          }
+          let dist = null;
+          if (userCoordinates && provider.location?.coordinates) {
+             const [pLng, pLat] = provider.location.coordinates;
+             dist = calculateDistance(userCoordinates[1], userCoordinates[0], pLat, pLng);
+          }
 
-      const mappedProviders = data.providers.map((provider) => {
-        // 🔹 normalize specialties into an array
-        let specialties = [];
-        if (Array.isArray(provider.specialties)) {
-          specialties = provider.specialties;
-        } else if (
-          typeof provider.specialties === 'string' &&
-          provider.specialties.trim().length > 0
-        ) {
-          specialties = provider.specialties
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean);
-        }
+          return {
+            ...provider,
+            image: provider.profilePicture || provider.image || exampleProfilepic,
+            name: `${provider.firstName || ''} ${provider.lastName || ''}`.trim() || provider.username || 'Service Provider',
+            username: provider.username ? (provider.username.startsWith('@') ? provider.username : `@${provider.username}`) : `@${provider.firstName?.toLowerCase() || 'user'}`,
+            rating: provider.rating || 0,
+            hourlyRate: provider.hourlyRate || 0,
+            specialties,
+            distance: dist, 
+          };
+        });
 
-        return {
-          ...provider,
-          image:
-            provider.profilePicture || provider.image || exampleProfilepic,
-          name:
-            `${provider.firstName || ''} ${provider.lastName || ''}`.trim() ||
-            provider.username ||
-            'Service Provider',
-          username: provider.username
-            ? provider.username.startsWith('@')
-              ? provider.username
-              : `@${provider.username}`
-            : `@${provider.firstName?.toLowerCase() || 'user'}`,
-          rating: provider.rating || 0,
-          hourlyRate: provider.hourlyRate || 0,
-          specialties, // use normalized array
-          distance: provider.distance || 0,
-        };
-      });
-
-      setRealProviders(mappedProviders);
-      setFilteredProviders(mappedProviders);
-    } else {
-      // if response not ok or no providers, fall back to mock
+        setRealProviders(mappedProviders);
+        setFilteredProviders(mappedProviders);
+      } else {
+        setFilteredProviders(mockProviders);
+      }
+    } catch (err) {
+      console.error('Failed to fetch providers:', err);
       setFilteredProviders(mockProviders);
+    } finally {
+      setLoadingProviders(false);
     }
-  } catch (err) {
-    console.error('Failed to fetch providers:', err);
-    setFilteredProviders(mockProviders);
-  } finally {
-    setLoadingProviders(false);
-  }
 };
 
 
@@ -453,7 +458,11 @@ const fetchProviders = async () => {
         sorted.sort((a, b) => (a.hourlyRate || 0) - (b.hourlyRate || 0))
         break
       case 'Location':
-        sorted.sort((a, b) => (a.distance || 0) - (b.distance || 0))
+        sorted.sort((a, b) => {
+            const dA = a.distance ? parseFloat(a.distance) : 99999;
+            const dB = b.distance ? parseFloat(b.distance) : 99999;
+            return dA - dB;
+        });
         break
       case 'Rating':
         sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0))
@@ -755,16 +764,8 @@ const fetchProviders = async () => {
         onHire={handleHireProvider}
       />
 
-      {/* Direct Hire Modal */}
-      <DirectHireModal
-        isOpen={isDirectHireModalOpen}
-        onClose={() => {
-          setIsDirectHireModalOpen(false);
-          setSelectedProvider(null);
-        }}
-        provider={selectedProvider}
-        onSuccess={handleDirectHireSuccess}
-      />
+      <ProviderDetailModal isOpen={isProviderDetailModalOpen} onClose={() => { setIsProviderDetailModalOpen(false); setSelectedProvider(null); }} provider={selectedProvider} onHire={handleHireProvider} />
+      <DirectHireModal isOpen={isDirectHireModalOpen} onClose={() => { setIsDirectHireModalOpen(false); setSelectedProvider(null); }} provider={selectedProvider} onSuccess={handleDirectHireSuccess} />
     </Box>
   )
 }

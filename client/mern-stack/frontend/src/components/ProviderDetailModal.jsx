@@ -90,7 +90,9 @@ export default function ProviderDetailModal({ isOpen, onClose, provider, onHire 
 
   if (!isOpen || !provider) return null;
 
-  const displayProvider = fullProviderData || provider;
+  const displayProvider = fullProviderData 
+    ? { ...fullProviderData, distance: provider.distance } 
+    : provider;
   const name = displayProvider.name || `${displayProvider.firstName || ''} ${displayProvider.lastName || ''}`.trim() || 'Service Provider';
   const username = displayProvider.username || `@${displayProvider.firstName?.toLowerCase() || 'user'}`;
   const rating = displayProvider.rating || 0;
@@ -101,7 +103,18 @@ export default function ProviderDetailModal({ isOpen, onClose, provider, onHire 
   const bio = displayProvider.bio || displayProvider.description || 'No bio available.';
   const email = displayProvider.email;
   const phone = displayProvider.phone;
-  const location = displayProvider.location;
+  const formatLocation = () => {
+    const city = displayProvider.address?.city;
+    if (city) return city;
+    return "Location Available"; 
+  };
+
+  const formatDistance = (dist) => {
+    if (!dist) return null;
+    const num = parseFloat(dist);
+    if (num > 12000) return null; // Hide if "Null Island" error
+    return `${num.toFixed(1)} miles away`;
+  };
 
   return (
     <Box
@@ -271,6 +284,23 @@ export default function ProviderDetailModal({ isOpen, onClose, provider, onHire 
                 <Text color="#d97baa" fontSize="lg" fontWeight="bold">${hourlyRate}/hr</Text>
               </VStack>
             </HStack>
+
+            <HStack spacing={4} justify="space-between" bg="#0a0e27" p={4} borderRadius="md" border="1px solid #3a4456">
+                <VStack align="start" spacing={1}>
+                  <Text color="#aaa" fontSize="xs" fontWeight="bold">LOCATION</Text>
+                  <Text color="white" fontSize="md" fontWeight="bold">
+                     {formatLocation()}
+                  </Text>
+                  {/* Show Distance if valid */}
+                  {formatDistance(distance) && (
+                      <Text color="#d97baa" fontSize="sm">📍 {formatDistance(distance)}</Text>
+                  )}
+                </VStack>
+                <VStack align="end" spacing={1}>
+                  <Text color="#aaa" fontSize="xs" fontWeight="bold">HOURLY RATE</Text>
+                  <Text color="#d97baa" fontSize="lg" fontWeight="bold">${hourlyRate}/hr</Text>
+                </VStack>
+              </HStack>
 
             {/* Action Buttons */}
             <HStack spacing={3} pt={4} borderTop="1px solid #3a4456">
