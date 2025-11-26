@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Box, HStack, VStack, Text, Button, Heading, Image, Wrap, WrapItem, Badge } from '@chakra-ui/react'
+import { Box, HStack, VStack, Text, Button, Heading, Image, Wrap, WrapItem, Badge, Spinner } from '@chakra-ui/react'
+import { toast } from 'react-toastify'
 import { useRole } from '../../components/RoleContext'
+import JobDetailModal from '../../components/JobDetailModal';
+import { jwtDecode } from 'jwt-decode';
+import { getToken } from '../../utils/tokenUtils';
+import { getSocket } from '../../utils/socket';
 
 import comconnectLogo from "../../logo/COMCONNECT_Logo.png";
 import exampleProfilepic from "../../profile_picture/OIP.jpg";
@@ -118,13 +123,18 @@ const mockJobs = [
  * Includes hover effect (lifts up with shadow) for better interactivity
  * Handles both mock jobs and real API jobs
  */
-function JobCard({ job, onApply }) {
+function JobCard({ job, onApply, onCardClick, user }) {
   // Handle both mock and real job data
   const title = job.title || 'Untitled Job'
   const price = job.price || job.budget || 0
   const rating = job.rating || job.posterRating || 0
   const name = job.name || job.posterName || 'Unknown'
   const poster = job.poster || `@${job.posterName?.toLowerCase().replace(' ', '') || 'user'}`
+  
+  // Check if user has already applied
+  const hasApplied = user && job.applications?.some(
+    app => (app.providerId?._id || app.providerId) === user.id
+  );
   
   return (
     <Box
@@ -140,7 +150,7 @@ function JobCard({ job, onApply }) {
       position="relative"
       _hover={{ transform: 'translateY(-4px)', boxShadow: '0 8px 24px rgba(217, 123, 170, 0.3)' }}
       transition="all 0.3s ease"
-      onClick={() => onApply(job)}
+      onClick={() => onCardClick && onCardClick(job)}
     >
       {/* Top section: Job title (left) and price (right) */}
       <Text 
@@ -221,14 +231,19 @@ function JobCard({ job, onApply }) {
         left="50%"
         transform="translateX(-50%)"
         width="calc(100% - 40px)"
-        bg="#d97baa"
+        bg={hasApplied ? "#3a3f5e" : "#d97baa"}
         color="white"
-        _hover={{ bg: '#c55a8f' }}
+        _hover={{ bg: hasApplied ? "#3a3f5e" : '#c55a8f' }}
         borderRadius="md"
         fontSize="sm"
         fontWeight="bold"
+        isDisabled={hasApplied}
+        onClick={(e) => {
+          e.stopPropagation();
+          onApply(job, e);
+        }}
       >
-        Apply Now
+        {hasApplied ? 'Already Applied' : 'Apply Now'}
       </Button>
     </Box>
   );
@@ -240,16 +255,83 @@ function JobCard({ job, onApply }) {
  */
 export default function ServiceProviderDashboard() {
   const navigate = useNavigate()
-  const { role } = useRole()
+  const { role, user } = useRole()
   const [filterType, setFilterType] = useState('Relevance')
   const [filteredJobs, setFilteredJobs] = useState([])
   const [realJobs, setRealJobs] = useState([])
   const [loading, setLoading] = useState(false)
+  const [selectedJobId, setSelectedJobId] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [hireRequests, setHireRequests] = useState([])
+  const [loadingHireRequests, setLoadingHireRequests] = useState(false)
 
-  // Fetch real jobs on mount
+  // Fetch real jobs and hire requests on mount
   useEffect(() => {
     fetchJobs()
+    fetchHireRequests()
   }, [])
+
+  // Socket.io real-time updates
+  useEffect(() => {
+    const socket = getSocket();
+    socket.on('jobCreated', handleJobCreated);
+    socket.on('jobUpdated', handleJobUpdated);
+    socket.on('directHireRequest', handleDirectHireRequest);
+
+    return () => {
+      socket.off('jobCreated', handleJobCreated);
+      socket.off('jobUpdated', handleJobUpdated);
+      socket.off('directHireRequest', handleDirectHireRequest);
+    };
+  }, [user?.id]); // Only depend on user.id to prevent re-subscribing
+
+  const handleDirectHireRequest = (data) => {
+    // Check if this notification is for the current user
+    if (user && data.providerId === user.id) {
+      toast.info(`New hire request from ${data.seekerName} for "${data.job.title}"!`, {
+        duration: 5000,
+      });
+      // Refresh hire requests
+      fetchHireRequests();
+    }
+  };
+
+  const handleJobCreated = (data) => {
+    // Add new job to the list (only open jobs)
+    if (data.job && data.job.status === 'open') {
+      setRealJobs(prevJobs => {
+        // Check if job already exists
+        if (!prevJobs.find(j => j._id === data.job._id)) {
+          return [data.job, ...prevJobs];
+        }
+        return prevJobs;
+      });
+      setFilteredJobs(prevJobs => {
+        if (!prevJobs.find(j => j._id === data.job._id)) {
+          return [data.job, ...prevJobs];
+        }
+        return prevJobs;
+      });
+    }
+  };
+
+  const handleJobUpdated = (data) => {
+    // Update job in the list
+    if (data.jobId && data.job) {
+      setRealJobs(prevJobs => 
+        prevJobs.map(job => 
+          job._id === data.jobId ? data.job : job
+        ).filter(job => job.status === 'open') // Only show open jobs
+      );
+      setFilteredJobs(prevJobs => 
+        prevJobs.map(job => 
+          job._id === data.jobId ? data.job : job
+        ).filter(job => job.status === 'open')
+      );
+      // Refresh hire requests in case one was accepted/rejected
+      fetchHireRequests();
+    }
+  };
 
   const fetchJobs = async () => {
     try {
@@ -269,13 +351,92 @@ export default function ServiceProviderDashboard() {
     }
   }
 
+  const fetchHireRequests = async () => {
+    if (!user) return;
+    try {
+      setLoadingHireRequests(true);
+      const token = getToken();
+      const response = await fetch(`${API_URL}/jobs/hire-requests/my`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (response.ok && data.hireRequests) {
+        setHireRequests(data.hireRequests);
+      }
+    } catch (err) {
+      console.error('Failed to fetch hire requests:', err);
+    } finally {
+      setLoadingHireRequests(false);
+    }
+  }
+
+  const handleAcceptHireRequest = async (jobId) => {
+    try {
+      const token = getToken();
+      const response = await fetch(`${API_URL}/jobs/${jobId}/accept-hire-request`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        toast.success('Hire request accepted!');
+        fetchHireRequests();
+        fetchJobs();
+      } else {
+        toast.error(data.error || 'Failed to accept hire request');
+      }
+    } catch (err) {
+      console.error('Failed to accept hire request:', err);
+      toast.error('Failed to accept hire request');
+    }
+  }
+
+  const handleRejectHireRequest = async (jobId) => {
+    try {
+      const token = getToken();
+      const response = await fetch(`${API_URL}/jobs/${jobId}/reject-hire-request`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        toast.success('Hire request rejected');
+        fetchHireRequests();
+      } else {
+        toast.error(data.error || 'Failed to reject hire request');
+      }
+    } catch (err) {
+      console.error('Failed to reject hire request:', err);
+      toast.error('Failed to reject hire request');
+    }
+  }
+
   // Returns the correct dashboard path based on user role
   const getDashboardPath = () => {
-    switch(role) {
-      case 'seeker': return '/dashboard-seeker'
-      case 'admin': return '/admin'
-      default: return '/dashboard-provider'
+    // Always read from token to avoid stale role from context
+    const token = getToken();
+    if (token) {
+      try {
+        const decodedUser = jwtDecode(token);
+        const currentRole = decodedUser.role;
+        switch(currentRole) {
+          case 'seeker': return '/dashboard-seeker'
+          case 'admin': return '/admin'
+          default: return '/dashboard-provider'
+        }
+      } catch (e) {
+        return '/login';
+      }
     }
+    return '/login';
   }
 
   /**
@@ -303,8 +464,49 @@ export default function ServiceProviderDashboard() {
   }
 
   // Called when user clicks "Apply Now" button on a job card
-  const handleApplyJob = (job) => {
-    alert(`Applied to: ${job.title} by ${job.name}!`)
+  const handleApplyJob = async (job, e) => {
+    if (e) {
+      e.stopPropagation();
+    }
+
+    if (!user) {
+      toast.error('Please log in to apply');
+      return;
+    }
+
+    // Check if already applied
+    const hasApplied = job.applications?.some(
+      app => (app.providerId?._id || app.providerId) === user.id
+    );
+
+    if (hasApplied) {
+      toast.info('You have already applied for this job');
+      return;
+    }
+
+    try {
+      const token = getToken();
+      const response = await fetch(`${API_URL}/jobs/${job._id}/apply`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('Application submitted successfully!');
+        // Refresh jobs to get updated application status
+        fetchJobs();
+      } else {
+        toast.error(data.error || 'Failed to apply');
+      }
+    } catch (err) {
+      console.error('Failed to apply:', err);
+      toast.error('Failed to submit application');
+    }
   }
 
   return (
@@ -349,6 +551,84 @@ export default function ServiceProviderDashboard() {
             </Text>
           </VStack>
 
+          {/* Pending Hire Requests Section */}
+          {hireRequests.length > 0 && (
+            <Box w="full" bg="#1a1f3a" p={6} borderRadius="md" border="1px solid #3a4456">
+              <VStack align="start" spacing={4} w="full">
+                <HStack justify="space-between" w="full" align="center">
+                  <Heading as="h2" size="lg" color="white">
+                    Hire Requests ({hireRequests.length})
+                  </Heading>
+                  <Button
+                    size="sm"
+                    bg="transparent"
+                    color="#d97baa"
+                    border="1px solid #d97baa"
+                    _hover={{ bg: 'rgba(217, 123, 170, 0.1)' }}
+                    onClick={fetchHireRequests}
+                    isDisabled={loadingHireRequests}
+                  >
+                    {loadingHireRequests ? 'Refreshing...' : 'Refresh'}
+                  </Button>
+                </HStack>
+                <VStack spacing={3} w="full" align="stretch">
+                  {hireRequests.map((job) => {
+                    const seekerName = job.postedBy 
+                      ? `${job.postedBy.firstName} ${job.postedBy.lastName}`.trim() || job.postedBy.username
+                      : job.posterName || 'Unknown Seeker';
+                    return (
+                      <Box
+                        key={job._id}
+                        w="full"
+                        p={4}
+                        bg="#0a0e27"
+                        borderRadius="md"
+                        border="1px solid #d97baa"
+                      >
+                        <VStack align="start" spacing={3} w="full">
+                          <HStack justify="space-between" w="full" align="start">
+                            <VStack align="start" spacing={2} flex={1}>
+                              <HStack spacing={2}>
+                                <Text color="white" fontWeight="bold" fontSize="lg">{job.title}</Text>
+                                <Badge bg="#d97baa" color="white" fontSize="xs">Hire Request</Badge>
+                              </HStack>
+                              <Text color="#aaa" fontSize="sm" noOfLines={2}>{job.description}</Text>
+                              <HStack spacing={4}>
+                                <Badge bg="#3a3f5e" color="white">{job.category}</Badge>
+                                <Text color="#999" fontSize="sm">${job.budget}</Text>
+                                <Text color="#999" fontSize="sm">From: {seekerName}</Text>
+                              </HStack>
+                            </VStack>
+                          </HStack>
+                          <HStack spacing={3} w="full" justify="flex-end">
+                            <Button
+                              size="sm"
+                              bg="#dc3545"
+                              color="white"
+                              _hover={{ bg: '#c82333' }}
+                              onClick={() => handleRejectHireRequest(job._id)}
+                            >
+                              Reject
+                            </Button>
+                            <Button
+                              size="sm"
+                              bg="#4CAF50"
+                              color="white"
+                              _hover={{ bg: '#45a049' }}
+                              onClick={() => handleAcceptHireRequest(job._id)}
+                            >
+                              Accept
+                            </Button>
+                          </HStack>
+                        </VStack>
+                      </Box>
+                    );
+                  })}
+                </VStack>
+              </VStack>
+            </Box>
+          )}
+
           {/* Filter buttons - click to sort jobs by different criteria */}
           <HStack spacing={4} w="full" justify="space-between" flexWrap="wrap">
             <HStack spacing={2} flex={1}>
@@ -374,14 +654,32 @@ export default function ServiceProviderDashboard() {
           <VStack align="center" w="full">
             <Wrap spacingX="40px" spacingY="60px" justify="center" align="center" w="full">
               {filteredJobs.map((job) => (
-                <WrapItem key={job.id}>
-                  <JobCard job={job} onApply={handleApplyJob} />
+                <WrapItem key={job.id || job._id}>
+                  <JobCard 
+                    job={job} 
+                    onApply={handleApplyJob}
+                    onCardClick={(job) => {
+                      setSelectedJobId(job._id || job.id);
+                      setIsModalOpen(true);
+                    }}
+                    user={user}
+                  />
                 </WrapItem>
               ))}
             </Wrap>
           </VStack>
         </VStack>
       </Box>
+
+      {/* Job Detail Modal */}
+      <JobDetailModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedJobId(null);
+        }}
+        jobId={selectedJobId}
+      />
     </Box>
   )
 }

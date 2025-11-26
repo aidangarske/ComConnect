@@ -3,10 +3,9 @@
  * Handles user registration, login, and token management
  */
 
-const express = require('express');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-
+import express from 'express';
+import jwt from "jsonwebtoken";
+import User from '../models/User.js';
 const router = express.Router();
 
 // Helper function to generate JWT token
@@ -167,5 +166,5 @@ router.post('/verify', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
 

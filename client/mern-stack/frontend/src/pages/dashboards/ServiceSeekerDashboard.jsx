@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Box, HStack, VStack, Text, Button, Heading, Image, Wrap, WrapItem, Badge } from '@chakra-ui/react'
+import { Box, HStack, VStack, Text, Button,  Menu, Portal, Image, Heading, Wrap, WrapItem, Badge } from '@chakra-ui/react'
 import { useRole } from '../../components/RoleContext'
+// Import the utility function we created in Step 1
+import { startChatWithRecipient } from '../../utils/chatUtils.js';
+import JobDetailModal from '../../components/JobDetailModal';
+import DirectHireModal from '../../components/DirectHireModal';
+import ProviderDetailModal from '../../components/ProviderDetailModal';
+import { toast } from 'react-toastify';
+import { getSocket } from '../../utils/socket';
+import { getToken } from '../../utils/tokenUtils';
 
 import comconnectLogo from "../../logo/COMCONNECT_Logo.png";
 import exampleProfilepic from "../../profile_picture/OIP.jpg";
@@ -16,7 +24,7 @@ const API_URL = 'http://localhost:8080/api';
 const mockProviders = [
   {
     id: 1,
-    username: '@johndoe',
+    username: 'johndoe',
     name: 'John Pork',
     rating: 4.8,
     distance: 2.7,
@@ -26,7 +34,7 @@ const mockProviders = [
   },
   {
     id: 2,
-    username: '@sarahjones',
+    username: 'sarahjones',
     name: 'Sarah Jones',
     rating: 4.9,
     distance: 1.2,
@@ -34,82 +42,19 @@ const mockProviders = [
     specialties: ['Tutoring', 'Writing', 'Design'],
     hourlyRate: 50
   },
-  {
-    id: 3,
-    username: '@mikedavis',
-    name: 'Mike Davis',
-    rating: 4.6,
-    distance: 3.5,
-    image: exampleProfilepic,
-    specialties: ['Plumbing', 'Electrical', 'Repairs'],
-    hourlyRate: 60
-  },
-  {
-    id: 4,
-    username: '@emilywilson',
-    name: 'Emily Wilson',
-    rating: 5.0,
-    distance: 0.8,
-    image: exampleProfilepic,
-    specialties: ['Cleaning', 'Organization', 'Cooking'],
-    hourlyRate: 40
-  },
-  {
-    id: 5,
-    username: '@tomanderson',
-    name: 'Tom Anderson',
-    rating: 4.7,
-    distance: 2.1,
-    image: exampleProfilepic,
-    specialties: ['Landscaping', 'Yard Work', 'Maintenance'],
-    hourlyRate: 45
-  },
-  {
-    id: 6,
-    username: '@alexchen',
-    name: 'Alex Chen',
-    rating: 4.9,
-    distance: 1.9,
-    image: exampleProfilepic,
-    specialties: ['Web Design', 'Graphics', 'Branding'],
-    hourlyRate: 75
-  },
-  {
-    id: 7,
-    username: '@lisabrown',
-    name: 'Lisa Brown',
-    rating: 4.8,
-    distance: 4.2,
-    image: exampleProfilepic,
-    specialties: ['Photography', 'Editing', 'Videography'],
-    hourlyRate: 80
-  },
-  {
-    id: 8,
-    username: '@roberttaylor',
-    name: 'Robert Taylor',
-    rating: 4.5,
-    distance: 5.0,
-    image: exampleProfilepic,
-    specialties: ['Handyman', 'Assembly', 'Installation'],
-    hourlyRate: 55
-  },
+  // ... add other mock providers if you wish
 ];
 
-/**
- * ProviderCard Component - displays individual provider profile in a beautiful card format
- * Features: profile image, specialties, rating, distance, hourly rate, and hire button
- * Includes hover effect (lifts up with shadow) for better interactivity
- * Handles both mock and real provider data
- */
-function ProviderCard({ provider, onHire }) {
-  // Handle both mock and real provider data
+// --- 1. Updated ProviderCard Component ---
+// Simplified card that opens modal on click
+function ProviderCard({ provider, onClick }) {
   const username = provider.username || `@${provider.firstName?.toLowerCase() || 'user'}`
   const rating = provider.rating || 0
   const name = provider.name || `${provider.firstName} ${provider.lastName}`.trim() || 'Service Provider'
   const specialties = provider.specialties && provider.specialties.length > 0 
     ? provider.specialties 
     : ['Professional Services']
+    /*List of skills to select from the skills menu */
   const hourlyRate = provider.hourlyRate || 0
   const distance = provider.distance || 0
   
@@ -122,43 +67,39 @@ function ProviderCard({ provider, onHire }) {
       p={[6, 8]}
       backdropFilter="blur(10px)"
       width="320px"
-      height="400px"
+      height="380px"
       cursor="pointer"
       position="relative"
       _hover={{ transform: 'translateY(-4px)', boxShadow: '0 8px 24px rgba(217, 123, 170, 0.3)' }}
       transition="all 0.3s ease"
-      onClick={() => onHire(provider)}
+      onClick={onClick}
     >
-      {/* Top section: Username (left) and Rating (right) */}
+      {/* Top section */}
       <HStack position="absolute" top="20px" left="20px" right="20px" justify="space-between">
-        <Text 
-          fontSize="sm" 
-          fontWeight="bold"
-          color="#d97baa"
-        >
-          {username}
-        </Text>
+        <Text fontSize="sm" fontWeight="bold" color="#d97baa">{username}</Text>
         <Text fontSize="sm" color="white">{rating}⭐</Text>
       </HStack>
 
-      {/* Circular profile image with pink border */}
-      <Image 
+      {/* Profile Image */}
+      <Box
+        as="img"
         position="absolute" 
         borderRadius="50%" 
         boxSize="90px" 
         top="70px" 
         left="50%" 
         transform="translateX(-50%)" 
-        src={provider.image || exampleProfilepic} 
+        src={provider.profilePicture || provider.image || exampleProfilepic} 
         alt={name}
         border="3px solid #d97baa"
+        style={{ objectFit: 'cover' }}
       />
 
-      {/* Provider's full name - centered below image */}
+      {/* Name */}
       <Text 
         position="absolute" 
         fontSize="18px" 
-        fontWeight="bold"
+        fontWeight="bold" 
         left="50%" 
         top="165px" 
         color="white" 
@@ -170,87 +111,217 @@ function ProviderCard({ provider, onHire }) {
         {name}
       </Text>
 
-      {/* List of services/skills the provider offers */}
-      <VStack 
-        position="absolute" 
-        top="200px"
-        left="50%" 
-        transform="translateX(-50%)" 
-        spacing={0}
-        align="center"
-        w="80%"
-      >
+      {/* Specialties Preview */}
+      <VStack position="absolute" top="200px" left="50%" transform="translateX(-50%)" spacing={0} align="center" w="80%">
         {specialties.slice(0, 2).map((specialty, idx) => (
-          <Text key={idx} fontSize="xs" color="#aaa" noOfLines={1}>
-            • {specialty}
-          </Text>
+          <Text key={idx} fontSize="xs" color="#aaa" noOfLines={1}>• {specialty}</Text>
         ))}
+        {specialties.length > 2 && (
+          <Text fontSize="xs" color="#d97baa" noOfLines={1}>+{specialties.length - 2} more</Text>
+        )}
       </VStack>
 
-      {/* Distance from user and hourly rate - shown at bottom */}
-      <Text 
-        position="absolute" 
-        fontSize="sm" 
-        left="50%" 
-        bottom="65px" 
-        color="#aaa" 
-        transform="translateX(-50%)"
-        textAlign="center"
-        w="90%"
-        noOfLines={1}
-      >
+      {/* Info */}
+      <Text position="absolute" fontSize="sm" left="50%" bottom="20px" color="#aaa" transform="translateX(-50%)" textAlign="center" w="90%" noOfLines={1}>
         📍 {distance}mi | ${hourlyRate}/hr
       </Text>
-
-      {/* Action button - click to send hire request */}
-      <Button
-        position="absolute"
-        bottom="15px"
-        left="50%"
-        transform="translateX(-50%)"
-        width="calc(100% - 40px)"
-        bg="#d97baa"
-        color="white"
-        _hover={{ bg: '#c55a8f' }}
-        borderRadius="md"
-        fontSize="sm"
-        fontWeight="bold"
-      >
-        Hire Now
-      </Button>
     </Box>
   );
 }
 
+const OTHER_SKILL_LABEL = 'Other skills ⭐';
+
+  const SKILL_OPTIONS = [
+    'Manual labor 🔨',
+    'Tutoring📚',
+    'Painting 🎨',
+    'Cleaning 🧹',
+    'Gardening 🌱',
+    'Automotive 🚗',
+    'Design 🎨',
+    'Assembly 🔧',
+    'Plumbing 🚿',
+    'Electrical ⚡',
+    'Photography 📷',
+    'Music 🎵',
+    'Writing ✍️',
+    'Construction 🏗️',
+    'Carpentry 🪵',
+    OTHER_SKILL_LABEL,
+  ];
+
 /**
  * ServiceSeekerDashboard - Main page for service seekers to find and hire providers
- * Features: filter system (by relevance, location, price, rating), provider cards with hire buttons
+ * Features: filter system (by skills, location, price, rating), provider cards with hire buttons
  */
 export default function ServiceSeekerDashboard() {
+
+  // Router navigation for clicks on logo and header links.
   const navigate = useNavigate()
   const { role } = useRole()
-  const [filterType, setFilterType] = useState('Relevance')
+  const [filterType, setFilterType] = useState('Skills')
   const [filteredProviders, setFilteredProviders] = useState([])
+  const [selectedSkills, setSelectedSkills] = useState([]);
   const [realProviders, setRealProviders] = useState([])
   const [jobs, setJobs] = useState([])
   const [loadingJobs, setLoadingJobs] = useState(false)
   const [loadingProviders, setLoadingProviders] = useState(false)
   const [currentUserId, setCurrentUserId] = useState(null)
   const [deletingJobId, setDeletingJobId] = useState(null)
+  const [selectedJobId, setSelectedJobId] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isDirectHireModalOpen, setIsDirectHireModalOpen] = useState(false)
+  const [isProviderDetailModalOpen, setIsProviderDetailModalOpen] = useState(false)
+  const [selectedProvider, setSelectedProvider] = useState(null)
 
-  // Fetch real jobs, providers, and current user on component mount
   useEffect(() => {
     fetchJobs()
     fetchProviders()
     fetchCurrentUser()
-
-    // Refresh providers every 30 seconds
-    const interval = setInterval(() => {
-      fetchProviders()
-    }, 30000)
-
+    const interval = setInterval(() => fetchProviders(), 30000)
     return () => clearInterval(interval)
   }, [])
+
+  // Socket.io real-time updates
+  useEffect(() => {
+    const socket = getSocket();
+    socket.on('jobCreated', handleJobCreated);
+    socket.on('jobUpdated', handleJobUpdated);
+    socket.on('jobApplication', handleJobApplication);
+
+    return () => {
+      socket.off('jobCreated', handleJobCreated);
+      socket.off('jobUpdated', handleJobUpdated);
+      socket.off('jobApplication', handleJobApplication);
+    };
+  }, [currentUserId]); // Removed jobs from dependencies to prevent re-subscribing
+
+  const handleJobCreated = (data) => {
+    // Add new job to the list if it belongs to current user
+    if (data.job && currentUserId) {
+      const jobPosterId = typeof data.job.postedBy === 'object' 
+        ? data.job.postedBy._id 
+        : data.job.postedBy;
+      if (jobPosterId === currentUserId) {
+        setJobs(prevJobs => {
+          // Check if job already exists
+          if (!prevJobs.find(j => j._id === data.job._id)) {
+            return [data.job, ...prevJobs];
+          }
+          return prevJobs;
+        });
+      }
+    }
+  };
+
+  const handleJobUpdated = (data) => {
+    // Update job in the list
+    if (data.jobId && data.job) {
+      setJobs(prevJobs => 
+        prevJobs.map(job => 
+          job._id === data.jobId ? data.job : job
+        )
+      );
+    }
+  };
+
+  const handleJobApplication = (data) => {
+    // Update job when new application is received
+    if (data.jobId && data.job) {
+      // Check if this is a new application for one of the user's jobs
+      const jobPosterId = typeof data.job.postedBy === 'object' 
+        ? data.job.postedBy._id 
+        : data.job.postedBy;
+      
+      if (jobPosterId === currentUserId) {
+        // Show notification for new application
+        const providerName = data.application?.providerName || 'A provider';
+        toast.info(`New application from ${providerName} for "${data.job.title}"! Click to view.`, {
+          onClick: () => {
+            setSelectedJobId(data.jobId);
+            setIsModalOpen(true);
+          },
+          style: { cursor: 'pointer' }
+        });
+        
+        // Auto-open modal if not already open
+        if (!isModalOpen || selectedJobId !== data.jobId) {
+          setSelectedJobId(data.jobId);
+          setIsModalOpen(true);
+        }
+      }
+      
+      setJobs(prevJobs => 
+        prevJobs.map(job => 
+          job._id === data.jobId ? data.job : job
+        )
+      );
+    }
+  };
+
+  // Filter providers when selectedSkills or realProviders change
+
+// helper to normalize labels / specialties (lowercase, no emoji, no extra spaces)
+const normalizeSkill = (str) =>
+  str
+    ?.toLowerCase()
+    // strip emoji & symbols (rough but works well for your labels)
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}]/gu, '')
+    .trim();
+
+useEffect(() => {
+  const source = realProviders.length ? realProviders : mockProviders;
+
+  if (selectedSkills.length === 0) {
+    setFilteredProviders(source);
+    return;
+  }
+
+  const hasOtherSelected = selectedSkills.includes(OTHER_SKILL_LABEL);
+
+  // normalized names for the "normal" selected skills (not including Other)
+  const normalizedSelectedSkills = selectedSkills
+    .filter((s) => s !== OTHER_SKILL_LABEL)
+    .map(normalizeSkill);
+
+  // all "known" skills in the menu (excluding Other), normalized
+  const knownSkillNames = SKILL_OPTIONS
+    .filter((s) => s !== OTHER_SKILL_LABEL)
+    .map(normalizeSkill);
+
+  const filtered = source.filter((provider) => {
+    const providerSkills = (provider.specialties || []).map(normalizeSkill);
+
+    // 1) match when provider has any of the selected skills
+    const matchesSelected =
+      normalizedSelectedSkills.length > 0 &&
+      providerSkills.some((skill) =>
+        normalizedSelectedSkills.includes(skill)
+      );
+
+    // 2) match when "Other skills" is selected AND provider has at least one
+    //    specialty NOT in the known SKILL_OPTIONS list
+    const matchesOther =
+      hasOtherSelected &&
+      providerSkills.some(
+        (skill) => skill && !knownSkillNames.includes(skill)
+      );
+
+    return matchesSelected || matchesOther;
+  });
+
+  setFilteredProviders(filtered);
+}, [selectedSkills, realProviders]);
+
+
+
+  const toggleSkill = (skill) => {
+    setSelectedSkills((prev) =>
+      prev.includes(skill)
+        ? prev.filter((s) => s !== skill)   // remove if already selected
+        : [...prev, skill]                  // add if not selected
+    );
+  };
 
   const fetchJobs = async () => {
     try {
@@ -268,99 +339,111 @@ export default function ServiceSeekerDashboard() {
     }
   }
 
-  const fetchProviders = async () => {
-    try {
-      setLoadingProviders(true)
-      const response = await fetch(`${API_URL}/users/providers`)
-      const data = await response.json()
-      if (response.ok && data.providers) {
-        setRealProviders(data.providers)
-        setFilteredProviders(data.providers)
-      }
-    } catch (err) {
-      console.error('Failed to fetch providers:', err)
-      // Fall back to mock providers if API fails
-      setFilteredProviders(mockProviders)
-    } finally {
-      setLoadingProviders(false)
+const fetchProviders = async () => {
+  try {
+    setLoadingProviders(true);
+
+    const response = await fetch(`${API_URL}/users/providers`);
+    const data = await response.json();
+
+    if (response.ok && data.providers) {
+      // Debug: Log provider data to see if email/phone are included
+      console.log(
+        'Fetched providers:',
+        data.providers.map((p) => ({
+          name: `${p.firstName} ${p.lastName}`,
+          email: p.email,
+          phone: p.phone,
+          showEmail: p.privacySettings?.showEmail,
+          showPhone: p.privacySettings?.showPhone,
+        }))
+      );
+
+      const mappedProviders = data.providers.map((provider) => {
+        // 🔹 normalize specialties into an array
+        let specialties = [];
+        if (Array.isArray(provider.specialties)) {
+          specialties = provider.specialties;
+        } else if (
+          typeof provider.specialties === 'string' &&
+          provider.specialties.trim().length > 0
+        ) {
+          specialties = provider.specialties
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
+        }
+
+        return {
+          ...provider,
+          image:
+            provider.profilePicture || provider.image || exampleProfilepic,
+          name:
+            `${provider.firstName || ''} ${provider.lastName || ''}`.trim() ||
+            provider.username ||
+            'Service Provider',
+          username: provider.username
+            ? provider.username.startsWith('@')
+              ? provider.username
+              : `@${provider.username}`
+            : `@${provider.firstName?.toLowerCase() || 'user'}`,
+          rating: provider.rating || 0,
+          hourlyRate: provider.hourlyRate || 0,
+          specialties, // use normalized array
+          distance: provider.distance || 0,
+        };
+      });
+
+      setRealProviders(mappedProviders);
+      setFilteredProviders(mappedProviders);
+    } else {
+      // if response not ok or no providers, fall back to mock
+      setFilteredProviders(mockProviders);
     }
+  } catch (err) {
+    console.error('Failed to fetch providers:', err);
+    setFilteredProviders(mockProviders);
+  } finally {
+    setLoadingProviders(false);
   }
+};
+
 
   const fetchCurrentUser = async () => {
     try {
-      const token = localStorage.getItem('token')
+      const token = getToken()
       if (!token) return
-
       const response = await fetch(`${API_URL}/users/profile`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       })
       const data = await response.json()
-      if (response.ok) {
-        setCurrentUserId(data.id)
-      }
-    } catch (err) {
-      console.error('Failed to fetch current user:', err)
-    }
+      if (response.ok) setCurrentUserId(data.id)
+    } catch (err) { console.error(err) }
   }
 
   const handleDeleteJob = async (jobId) => {
-    if (!window.confirm('Are you sure you want to delete this job? This action cannot be undone.')) {
-      return
-    }
-
+    if (!window.confirm('Delete this job?')) return
     setDeletingJobId(jobId)
     try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        navigate('/login')
-        return
-      }
-
+      const token = getToken()
       const response = await fetch(`${API_URL}/jobs/${jobId}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       })
-
-      if (response.ok) {
-        // Remove job from list
-        setJobs(jobs.filter(job => job._id !== jobId))
-      } else {
-        const data = await response.json()
-        alert(data.error || 'Failed to delete job')
-      }
-    } catch (err) {
-      console.error('Delete job error:', err)
-      alert('Connection error. Make sure backend is running.')
-    } finally {
-      setDeletingJobId(null)
-    }
+      if (response.ok) setJobs(jobs.filter(job => job._id !== jobId))
+    } catch (err) { console.error(err) } 
+    finally { setDeletingJobId(null) }
   }
 
-  // Auto-refresh jobs when page regains focus
-  useEffect(() => {
-    const handleFocus = () => {
-      fetchJobs()
-    }
-    window.addEventListener('focus', handleFocus)
-    return () => window.removeEventListener('focus', handleFocus)
-  }, [])
+  // --- Use the utility function ---
+  const handleMessageProvider = (recipientId) => {
+     // We pass the recipientId and the navigate function to our utility
+     startChatWithRecipient(recipientId, navigate);
+  };
 
-  // Returns the correct dashboard path based on user role
-  const getDashboardPath = () => {
-    switch(role) {
-      case 'seeker': return '/dashboard-seeker'
-      case 'admin': return '/admin'
-      default: return '/dashboard-provider'
-    }
-  }
-
-  /**
+    /**
    * Handles filter button clicks - sorts providers based on selected filter
-   * Supports: Relevance (original), Location (nearest), Price (cheapest), Rating (best)
+   * Supports: Skills, Location (nearest), Price (cheapest), Rating (best)
    */
   const handleFilterChange = (filter) => {
     setFilterType(filter)
@@ -375,59 +458,56 @@ export default function ServiceSeekerDashboard() {
       case 'Rating':
         sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0))
         break
+      case 'Skills':
       default:
-        // 'Relevance' - keep original order
         break
     }
     setFilteredProviders(sorted)
   }
 
-  // Called when user clicks "Hire Now" button on a provider card
+  const handleProviderCardClick = (provider) => {
+    setSelectedProvider(provider)
+    setIsProviderDetailModalOpen(true)
+  }
+
   const handleHireProvider = (provider) => {
-    const name = provider.name || provider.firstName || 'Provider'
-    alert(`You've selected ${name}! Sending hire request...`)
+    setSelectedProvider(provider)
+    setIsDirectHireModalOpen(true)
+  }
+
+  const handleDirectHireSuccess = () => {
+    // Refresh jobs and providers after successful hire
+    fetchJobs()
+    fetchProviders()
   }
 
   return (
     <Box minH="100vh" bg="#0a0e27">
-      {/* Header - White background with logo and navigation links */}
       <Box bg="white" borderBottom="1px solid #1a1f3a" py={4} px={8}>
           <HStack justify="space-between" align="center">
-            {/* Logo */}
-            <Image 
+            <Box
+              as="img"
               src={comconnectLogo} 
               alt="ComConnect" 
               h={["80px", "80px", "80px"]}
               w="auto"
-              objectFit="contain"
-              maxW="100%"
+              style={{ objectFit: 'contain' }}
               cursor="pointer"
               onClick={() => window.location.reload()}
             />
-            {/* Navigation links on the right */}
             <HStack spacing={6}>
-              <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/profile')}>
-                Profile
-              </Text>
-              <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/messages')}>
-                Messages
-              </Text>
+              <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/profile')}>Profile</Text>
+              <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/messages')}>Messages</Text>
             </HStack>
           </HStack>
       </Box>
 
-      {/* Main content area */}
       <Box py={8} px={8}>
         <VStack align="start" spacing={8} w="full">
-          {/* Page title and description */}
           <HStack w="full" justify="space-between" align="start">
             <VStack align="start" spacing={4} flex={1}>
-              <Heading as="h1" size="2xl" color="white">
-                Find the help you need.
-              </Heading>
-              <Text color="#aaa" fontSize="md">
-                Search trusted providers, compare reviews, and book with confidence.
-              </Text>
+              <Heading as="h1" size="2xl" color="white">Find the help you need.</Heading>
+              <Text color="#aaa" fontSize="md">Search trusted providers, compare reviews, and book with confidence.</Text>
             </VStack>
             <Button
               bg="#d97baa"
@@ -435,9 +515,7 @@ export default function ServiceSeekerDashboard() {
               _hover={{ bg: '#c55a8f' }}
               fontWeight="bold"
               onClick={() => navigate('/create-job')}
-              px={6}
-              py={6}
-              borderRadius="md"
+              px={6} py={6} borderRadius="md"
             >
               + Post a Job
             </Button>
@@ -474,11 +552,30 @@ export default function ServiceSeekerDashboard() {
                     <VStack align="start" w="full" spacing={3}>
                       <HStack w="full" justify="space-between" align="start">
                         <VStack align="start" flex={1} spacing={2}>
-                          <Text color="white" fontWeight="bold" fontSize="md">{job.title}</Text>
+                          <HStack spacing={2} align="center">
+                            <Text color="white" fontWeight="bold" fontSize="md">{job.title}</Text>
+                            <Badge
+                              bg={
+                                job.status === 'open' ? '#d97baa' :
+                                job.status === 'in-progress' ? '#4CAF50' :
+                                job.status === 'completed' ? '#2196F3' : '#999'
+                              }
+                              color="white"
+                              fontSize="xs"
+                            >
+                              {job.status}
+                            </Badge>
+                            {job.applications && job.applications.length > 0 && (
+                              <Badge bg="#3a3f5e" color="white" fontSize="xs">
+                                {job.applications.length} {job.applications.length === 1 ? 'applicant' : 'applicants'}
+                              </Badge>
+                            )}
+                          </HStack>
                           <Text color="#aaa" fontSize="sm" maxW="300px" noOfLines={2}>{job.description}</Text>
                           <HStack spacing={4}>
                             <Badge bg="#d97baa" color="white">{job.category}</Badge>
                             <Text color="#999" fontSize="sm">Budget: ${job.budget}</Text>
+                            <Text color="#999" fontSize="sm">Estimated Duration: ~{job.estimatedDuration} hrs</Text>
                           </HStack>
                         </VStack>
                         <HStack spacing={2}>
@@ -487,11 +584,13 @@ export default function ServiceSeekerDashboard() {
                             color="white"
                             size="sm"
                             _hover={{ bg: '#c55a8f' }}
-                            onClick={() => alert(`Job: ${job.title}\n\nDescription: ${job.description}\n\nBudget: $${job.budget}\n\nCategory: ${job.category}\n\nStatus: ${job.status}`)}
+                            onClick={() => {
+                              setSelectedJobId(job._id);
+                              setIsModalOpen(true);
+                            }}
                           >
                             Details
                           </Button>
-                          {/* Only show delete button if current user is the job creator */}
                           {currentUserId && (typeof job.postedBy === 'object' ? job.postedBy._id : job.postedBy) === currentUserId && (
                             <Button
                               bg="#dc3545"
@@ -519,20 +618,90 @@ export default function ServiceSeekerDashboard() {
               <Heading as="h2" size="lg" color="white">
                 Browse Service Providers
               </Heading>
-              <Button
-                size="xs"
-                bg="transparent"
-                color="#d97baa"
-                border="1px solid #d97baa"
-                _hover={{ bg: 'rgba(217, 123, 170, 0.1)' }}
-                onClick={fetchProviders}
-                isDisabled={loadingProviders}
-              >
-                {loadingProviders ? '⟳ Refreshing...' : '⟳ Refresh'}
-              </Button>
             </HStack>
+            <VStack align="flex-end" spacing={2}>
+              <Menu.Root>
+                <Menu.Trigger asChild>
+                  <Button
+                    size="sm"
+                    bg={selectedSkills.length ? '#d97baa' : 'transparent'}
+                    color="white"
+                    borderColor="#3a3f5e"
+                    border="1px solid"
+                    _hover={{ bg: '#d97baa' }}
+                    transition="all 0.2s"
+                  >
+                    {selectedSkills.length === 0
+                      ? 'Skills'
+                      : `${selectedSkills.length} skill${selectedSkills.length > 1 ? 's' : ''} selected`}
+                  </Button>
+                </Menu.Trigger>
+
+                <Portal>
+                  <Menu.Positioner>
+                    <Menu.Content
+                      bg="#11152f"
+                      borderColor="#3a3f5e"
+                      borderWidth="1px"
+                      borderRadius="lg"
+                      py={2}
+                      minW="220px"
+                    >
+                      {SKILL_OPTIONS.map((skill) => {
+                        const isSelected = selectedSkills.includes(skill)
+                        return (
+                          <Menu.Item
+                            key={skill}
+                            onClick={() => toggleSkill(skill)}
+                            _hover={{ bg: 'rgba(217, 123, 170, 0.12)' }}
+                            px={3}
+                            py={2}
+                          >
+                            <HStack justify="space-between" w="full">
+                              <Text fontSize="sm" color="white">
+                                {skill}
+                              </Text>
+                              {isSelected && (
+                                <Box
+                                  boxSize="8px"
+                                  borderRadius="full"
+                                  bg="#d97baa"
+                                />
+                              )}
+                            </HStack>
+                          </Menu.Item>
+                        )
+                      })}
+                    </Menu.Content>
+                  </Menu.Positioner>
+                </Portal>
+              </Menu.Root>
+
+              {selectedSkills.length > 0 && (
+                <Wrap spacing={2} justify="flex-end" maxW="260px">
+                  {selectedSkills.map((skill) => (
+                    <WrapItem key={skill}>
+                      <Badge
+                        px={2}
+                        py={1}
+                        borderRadius="full"
+                        bg="rgba(217, 123, 170, 0.15)"
+                        color="#d97baa"
+                        border="1px solid #d97baa"
+                        fontSize="xs"
+                        cursor="pointer"
+                        onClick={() => toggleSkill(skill)} // click pill to remove
+                      >
+                        {skill} ✕
+                      </Badge>
+                    </WrapItem>
+                  ))}
+                </Wrap>
+              )}
+            </VStack>
+
             <HStack spacing={2} flex={1}>
-              {['Relevance', 'Location', 'Price', 'Rating'].map((filter) => (
+              {['Location', 'Price', 'Rating'].map((filter) => (
                 <Button
                   key={filter}
                   size="sm"
@@ -550,19 +719,52 @@ export default function ServiceSeekerDashboard() {
             </HStack>
           </HStack>
 
-          {/* Grid of provider cards - displays all providers with hire buttons */}
           <VStack align="center" w="full">
             <Wrap spacingX="40px" spacingY="60px" justify="center" align="center" w="full">
               {filteredProviders.map((provider) => (
-                <WrapItem key={provider.id}>
-                  <ProviderCard provider={provider} onHire={handleHireProvider} />
+                <WrapItem key={provider.id || provider._id}>
+                  <ProviderCard 
+                    provider={provider} 
+                    onClick={() => handleProviderCardClick(provider)}
+                  />
                 </WrapItem>
               ))}
             </Wrap>
           </VStack>
         </VStack>
-
       </Box>
+
+      {/* Job Detail Modal */}
+      <JobDetailModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedJobId(null);
+        }}
+        jobId={selectedJobId}
+      />
+
+      {/* Provider Detail Modal */}
+      <ProviderDetailModal
+        isOpen={isProviderDetailModalOpen}
+        onClose={() => {
+          setIsProviderDetailModalOpen(false);
+          setSelectedProvider(null);
+        }}
+        provider={selectedProvider}
+        onHire={handleHireProvider}
+      />
+
+      {/* Direct Hire Modal */}
+      <DirectHireModal
+        isOpen={isDirectHireModalOpen}
+        onClose={() => {
+          setIsDirectHireModalOpen(false);
+          setSelectedProvider(null);
+        }}
+        provider={selectedProvider}
+        onSuccess={handleDirectHireSuccess}
+      />
     </Box>
   )
 }

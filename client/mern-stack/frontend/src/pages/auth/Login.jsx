@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useRole } from '../../components/RoleContext'
+import { setToken } from '../../utils/tokenUtils'
 import {
   Box,
   VStack,
@@ -51,12 +52,12 @@ export default function Login() {
         return;
       }
 
-      // Save token to localStorage
-      localStorage.setItem('token', data.token);
+      // Save token using utility (stores in both sessionStorage and localStorage)
+      setToken(data.token);
       
       // Set role in context (saves to localStorage automatically)
       const userRole = data.user.role;
-      setRole(userRole);
+      setRole(userRole, data.user);
 
       // Navigate to correct dashboard based on role
       if (userRole === 'seeker') {

@@ -3,15 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { Box, VStack, HStack, Text, Input, Button, Heading, Image } from "@chakra-ui/react";
 import comconnectLogo from "../logo/COMCONNECT_Logo.png";
 
-export default function ServiceSeekerProfile() {
+export default function AdminProfile() {
   const navigate = useNavigate();
-  const [bio, setBio] = useState("");
-  const [skills, setSkills] = useState("");
-  const [experience, setExperience] = useState("");
-  const [location, setLocation] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
 
   const handleSave = () => {
-    alert("Profile saved (placeholder). Backend connection coming soon.");
+    alert("Admin profile saved (placeholder). Backend connection coming soon.");
   };
 
   const handleDeleteAccount = () => {
@@ -30,7 +28,7 @@ export default function ServiceSeekerProfile() {
             w="auto"
             objectFit="contain"
             cursor="pointer"
-            onClick={() => navigate("/dashboard-seeker")}
+            onClick={() => navigate("/admin")}
           />
           <HStack spacing={6}>
             <Text color="#d97baa" fontSize="md" fontWeight="bold" cursor="pointer" onClick={() => navigate('/profile')}>
@@ -47,28 +45,18 @@ export default function ServiceSeekerProfile() {
       <Box py={8}>
         <VStack align="start" spacing={8} w="full" maxW="600px">
           <Heading as="h1" size="2xl" color="white">
-            Service Seeker Profile
+            Admin Profile
           </Heading>
 
           <VStack spacing={6} w="full" align="stretch">
             <VStack align="start" w="full" spacing={2}>
-              <Text color="#999" fontSize="sm" fontWeight="bold">Bio</Text>
-              <Input placeholder="Tell us about yourself" bg="#1a1f3a" border="1px solid #3a4456" color="white" value={bio} onChange={(e) => setBio(e.target.value)} />
+              <Text color="#999" fontSize="sm" fontWeight="bold">Full Name</Text>
+              <Input placeholder="Admin Name" bg="#1a1f3a" border="1px solid #3a4456" color="white" value={fullName} onChange={(e) => setFullName(e.target.value)} />
             </VStack>
 
             <VStack align="start" w="full" spacing={2}>
-              <Text color="#999" fontSize="sm" fontWeight="bold">Skills</Text>
-              <Input placeholder="Comma separated skills" bg="#1a1f3a" border="1px solid #3a4456" color="white" value={skills} onChange={(e) => setSkills(e.target.value)} />
-            </VStack>
-
-            <VStack align="start" w="full" spacing={2}>
-              <Text color="#999" fontSize="sm" fontWeight="bold">Experience</Text>
-              <Input placeholder="Your experience" bg="#1a1f3a" border="1px solid #3a4456" color="white" value={experience} onChange={(e) => setExperience(e.target.value)} />
-            </VStack>
-
-            <VStack align="start" w="full" spacing={2}>
-              <Text color="#999" fontSize="sm" fontWeight="bold">Location</Text>
-              <Input placeholder="City, State" bg="#1a1f3a" border="1px solid #3a4456" color="white" value={location} onChange={(e) => setLocation(e.target.value)} />
+              <Text color="#999" fontSize="sm" fontWeight="bold">Email</Text>
+              <Input placeholder="admin@example.com" type="email" bg="#1a1f3a" border="1px solid #3a4456" color="white" value={email} onChange={(e) => setEmail(e.target.value)} />
             </VStack>
 
             <HStack spacing={4} w="full" pt={4}>

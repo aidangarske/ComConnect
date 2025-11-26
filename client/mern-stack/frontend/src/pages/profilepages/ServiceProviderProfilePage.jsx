@@ -3,10 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { Box, VStack, HStack, Text, Input, Button, Heading, Image } from "@chakra-ui/react";
 import comconnectLogo from "../logo/COMCONNECT_Logo.png";
 
-export default function ServiceSeekerProfile() {
+export default function ServiceProviderProfile() {
   const navigate = useNavigate();
   const [bio, setBio] = useState("");
-  const [skills, setSkills] = useState("");
+  const [services, setServices] = useState("");
   const [experience, setExperience] = useState("");
   const [location, setLocation] = useState("");
 
@@ -30,7 +30,7 @@ export default function ServiceSeekerProfile() {
             w="auto"
             objectFit="contain"
             cursor="pointer"
-            onClick={() => navigate("/dashboard-seeker")}
+            onClick={() => navigate("/dashboard-provider")}
           />
           <HStack spacing={6}>
             <Text color="#d97baa" fontSize="md" fontWeight="bold" cursor="pointer" onClick={() => navigate('/profile')}>
@@ -47,7 +47,7 @@ export default function ServiceSeekerProfile() {
       <Box py={8}>
         <VStack align="start" spacing={8} w="full" maxW="600px">
           <Heading as="h1" size="2xl" color="white">
-            Service Seeker Profile
+            Service Provider Profile
           </Heading>
 
           <VStack spacing={6} w="full" align="stretch">
@@ -57,8 +57,8 @@ export default function ServiceSeekerProfile() {
             </VStack>
 
             <VStack align="start" w="full" spacing={2}>
-              <Text color="#999" fontSize="sm" fontWeight="bold">Skills</Text>
-              <Input placeholder="Comma separated skills" bg="#1a1f3a" border="1px solid #3a4456" color="white" value={skills} onChange={(e) => setSkills(e.target.value)} />
+              <Text color="#999" fontSize="sm" fontWeight="bold">Services</Text>
+              <Input placeholder="Services you provide" bg="#1a1f3a" border="1px solid #3a4456" color="white" value={services} onChange={(e) => setServices(e.target.value)} />
             </VStack>
 
             <VStack align="start" w="full" spacing={2}>
@@ -85,3 +85,4 @@ export default function ServiceSeekerProfile() {
     </Box>
   );
 }
+
