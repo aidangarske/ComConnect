@@ -316,19 +316,17 @@ export default function ServiceProviderDashboard() {
   };
 
   const handleJobUpdated = (data) => {
-    // Update job in the list
     if (data.jobId && data.job) {
       setRealJobs(prevJobs => 
         prevJobs.map(job => 
           job._id === data.jobId ? data.job : job
-        ).filter(job => job.status === 'open') // Only show open jobs
+        ).filter(job => job.status === 'open' || job.status === 'approved') // Allow approved!
       );
       setFilteredJobs(prevJobs => 
         prevJobs.map(job => 
           job._id === data.jobId ? data.job : job
-        ).filter(job => job.status === 'open')
+        ).filter(job => job.status === 'open' || job.status === 'approved') // Allow approved!
       );
-      // Refresh hire requests in case one was accepted/rejected
       fetchHireRequests();
     }
   };
