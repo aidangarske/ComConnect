@@ -142,6 +142,31 @@ const userSchema = new mongoose.Schema(
       }
     },
 
+    isBanned: {
+      type: Boolean,
+      default: false
+    },
+    banReason: {
+      type: String,
+      default: null
+    },
+    bannedAt: {
+      type: Date,
+      default: null
+    },
+    isSuspended: {
+      type: Boolean,
+      default: false
+    },
+    suspensionReason: {
+      type: String,
+      default: null
+    },
+    suspendedUntil: {
+      type: Date,
+      default: null
+    },
+
     // Account Status
     isVerified: {
       type: Boolean,

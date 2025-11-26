@@ -43,7 +43,7 @@ function App() {
         <Route path="/ratings/:userId" element={<ViewRatings />} />
 
         <Route path="/admin" element={<AdminDashboard />}>
-          <Route index element={<ContentManagement />} />
+          <Route index element={<UserManagement />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="reports" element={<ReportsView />} />
           <Route path="settings" element={<AdminSettings />} />

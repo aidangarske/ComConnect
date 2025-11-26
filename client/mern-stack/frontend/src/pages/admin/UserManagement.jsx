@@ -272,6 +272,40 @@ function UserDetailsPanel({ user, onBack, onRefresh }) {
   const [showBanModal, setShowBanModal] = useState(false);
   const [showSuspendModal, setShowSuspendModal] = useState(false);
 
+  const handleDelete = async () => {
+    // 1. Confirm intent
+    const confirmMessage = `Are you sure you want to PERMANENTLY DELETE ${user.username}?\n\nThis action cannot be undone and will remove all their data.`;
+    if (!window.confirm(confirmMessage)) return;
+
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      // 2. Call the Delete API
+      const response = await fetch(`${API_BASE_URL}/admin/users/${user._id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('User deleted successfully');
+        // 3. Refresh list and go back
+        onRefresh();
+        onBack(); 
+      } else {
+        alert(data.message || 'Failed to delete user');
+      }
+    } catch (error) {
+      alert('Error deleting user');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleUnban = async () => {
     setLoading(true);
     try {
@@ -438,6 +472,21 @@ function UserDetailsPanel({ user, onBack, onRefresh }) {
               </Button>
             )}
           </HStack>
+          <Box borderTop="1px solid" borderColor="gray.600" pt={4} mt={2}>
+                <Button
+                  bg="red.900"
+                  color="white"
+                  variant="outline"
+                  borderColor="red.500"
+                  _hover={{ bg: 'red.800' }}
+                  onClick={handleDelete}
+                  isLoading={loading}
+                  loadingText="Deleting..."
+                  w="full"
+                >
+                  DELETE USER ACCOUNT PERMANENTLY
+                </Button>
+            </Box>
         </Box>
       </VStack>
 

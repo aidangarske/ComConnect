@@ -186,9 +186,14 @@ router.post('/direct-hire', authenticate, authorize('seeker', 'admin'), async (r
  */
 router.get('/', async (req, res) => {
   try {
-    const { category, status = 'open', sort = 'newest', limit = 20 } = req.query;
+    const { category, status = 'approved', sort = 'newest', limit = 20 } = req.query;
 
-    let filter = { status };
+    let queryStatus = status;
+    if (queryStatus === 'pending' || queryStatus === 'rejected') {
+        queryStatus = 'approved';
+    }
+
+    let filter = { status: queryStatus };
     if (category) filter.category = category;
 
     let sortOption = { createdAt: -1 }; // Default to newest

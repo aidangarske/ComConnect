@@ -89,11 +89,10 @@ export const jobSchema = new mongoose.Schema(
       required: true
     },
 
-    // Status
     status: {
       type: String,
-      enum: ['open', 'in-progress', 'completed', 'cancelled'],
-      default: 'open'
+      enum: ['pending', 'approved', 'rejected', 'open', 'in-progress', 'completed', 'cancelled'],
+      default: 'pending'
     },
 
     // Applications
