@@ -9,15 +9,19 @@ import ResetPassword from './pages/auth/ResetPassword'
 import ServiceSeekerDashboard from './pages/dashboards/ServiceSeekerDashboard'
 import ServiceProviderDashboard from './pages/dashboards/ServiceProviderDashboard'
 import Profile from './pages/Profile'
+import Settings from './pages/Settings'
 import Messages from './pages/Messages'
 import CreateJob from './pages/CreateJob'
 import HireProvider from './pages/HireProvider'
+import SubmitRating from './pages/SubmitRating'
+import ViewRatings from './pages/ViewRatings'
 import AdminDashboard from './pages/dashboards/AdminDashboard'
 import AdminSettings from './pages/admin/AdminSettings' 
 import ReportsView from './pages/admin/ReportsView'
 import UserManagement from './pages/admin/UserManagement'
 import ContentManagement from './pages/admin/ContentManagement'
 import SupportTickets from './pages/admin/SupportTickets'
+  
 
 
 function App() {
@@ -31,11 +35,15 @@ function App() {
         <Route path="/dashboard-seeker" element={<ServiceSeekerDashboard />} />
         <Route path="/dashboard-provider" element={<ServiceProviderDashboard />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/settings" element={<Settings />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/create-job" element={<CreateJob />} />
         <Route path="/hire/:jobId/:providerId" element={<HireProvider />} />
+        <Route path="/ratings/submit/:jobId?/:userId?" element={<SubmitRating />} />
+        <Route path="/ratings/:userId" element={<ViewRatings />} />
 
         <Route path="/admin" element={<AdminDashboard />}>
+          <Route index element={<UserManagement />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="reports" element={<ReportsView />} />
           <Route path="settings" element={<AdminSettings />} />

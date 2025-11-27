@@ -7,7 +7,8 @@ import {
   Text,
   Badge,
   Box,
-  Spinner
+  Spinner,
+  Image
 } from '@chakra-ui/react';
 import { useRole } from './RoleContext';
 import { toast } from 'react-toastify';
@@ -154,8 +155,10 @@ export default function JobDetailModal({ isOpen, onClose, jobId }) {
   );
 
   const isHiredProvider = job && user && job.selectedProvider && 
-    (job.selectedProvider._id || job.selectedProvider).toString() === user.id.toString() &&
-    job.status === 'in-progress';
+    (job.selectedProvider._id || job.selectedProvider).toString() === user.id.toString();
+  
+  const isHiredProviderInProgress = isHiredProvider && job.status === 'in-progress';
+  const isHiredProviderCompleted = isHiredProvider && job.status === 'completed';
 
   if (!isOpen) {
     return null;
@@ -234,6 +237,17 @@ export default function JobDetailModal({ isOpen, onClose, jobId }) {
                   >
                     {job.status}
                   </Badge>
+                  {!isJobOwner && role === 'provider' && hasApplied && (
+                    <Badge
+                      bg="#4CAF50"
+                      color="white"
+                      px={3}
+                      py={1}
+                      borderRadius="full"
+                    >
+                      Applied
+                    </Badge>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
@@ -279,6 +293,27 @@ export default function JobDetailModal({ isOpen, onClose, jobId }) {
                   <Text fontSize="md">{job.estimatedDuration}</Text>
                 </VStack>
               </HStack>
+
+              <Box w="full" p={3} bg="rgba(255,255,255,0.05)" borderRadius="md" border="1px solid #3a4456">
+                <HStack spacing={3}>
+                  <Text fontSize="xl">📍</Text>
+                  <Box>
+                    <Text fontSize="xs" color="#aaa" fontWeight="bold">LOCATION</Text>
+                    <Text fontWeight="bold" color="white">
+                      {job.isRemote ? (
+                        <Badge colorScheme="pink" variant="solid" bg="#d97baa">REMOTE WORK</Badge>
+                      ) : (
+                        // Show city/address from database. Note: We don't calculate distance here because
+                        // we fetched by ID and don't have user coordinates in this component's scope.
+                        job.city || job.address || "Location provided upon hiring"
+                      )}
+                    </Text>
+                  </Box>
+                </HStack>
+              </Box>
+              {/* ----------------------------------- */}
+
+              <Box w="full" h="1px" bg="#3a4456" my={4} />
 
               {/* Poster Info */}
               {job.postedBy && (
@@ -432,7 +467,7 @@ export default function JobDetailModal({ isOpen, onClose, jobId }) {
                   {hasApplied ? 'Already Applied' : 'Apply Now'}
                 </Button>
               )}
-              {isHiredProvider && job.status === 'in-progress' && (
+              {isHiredProviderInProgress && (
                 <Button
                   bg="#4CAF50"
                   color="white"
@@ -440,6 +475,38 @@ export default function JobDetailModal({ isOpen, onClose, jobId }) {
                   onClick={handleCompleteJob}
                 >
                   Complete Job
+                </Button>
+              )}
+              {isHiredProviderCompleted && job.postedBy && (
+                <Button
+                  bg="#d97baa"
+                  color="white"
+                  _hover={{ bg: '#c55a8f' }}
+                  onClick={() => {
+                    const seekerId = typeof job.postedBy === 'object'
+                      ? job.postedBy._id || job.postedBy
+                      : job.postedBy;
+                    navigate(`/ratings/submit/${job._id}/${seekerId}`);
+                    onClose();
+                  }}
+                >
+                  Rate Seeker
+                </Button>
+              )}
+              {isJobOwner && job.status === 'completed' && job.selectedProvider && (
+                <Button
+                  bg="#d97baa"
+                  color="white"
+                  _hover={{ bg: '#c55a8f' }}
+                  onClick={() => {
+                    const providerId = typeof job.selectedProvider === 'object'
+                      ? job.selectedProvider._id || job.selectedProvider
+                      : job.selectedProvider;
+                    navigate(`/ratings/submit/${job._id}/${providerId}`);
+                    onClose();
+                  }}
+                >
+                  Rate Provider
                 </Button>
               )}
               <Button variant="ghost" onClick={onClose}>

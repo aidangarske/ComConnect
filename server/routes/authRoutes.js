@@ -17,6 +17,35 @@ const generateToken = (userId, role) => {
   );
 };
 
+// Helper to check ban/suspend status
+const checkAccountStatus = (user) => {
+  // 1. Check if Banned
+  if (user.isBanned) {
+    return { 
+      allowed: false, 
+      message: `Your account has been permanently banned. Reason: ${user.banReason || 'Violation of terms'}` 
+    };
+  }
+
+  // 2. Check if Suspended
+  if (user.isSuspended) {
+    const now = new Date();
+    // If suspension date is in the future
+    if (user.suspendedUntil && new Date(user.suspendedUntil) > now) {
+      return { 
+        allowed: false, 
+        message: `Your account is suspended until ${new Date(user.suspendedUntil).toLocaleDateString()}. Reason: ${user.suspensionReason}` 
+      };
+    } else {
+      // Suspension time has passed - Auto-unsuspend logic (Optional but good UX)
+      // Note: We can't await save here easily without making this async, 
+      // so for now we just let them in. Ideally, you'd update the DB here.
+    }
+  }
+
+  return { allowed: true };
+};
+
 /**
  * POST /api/auth/register
  * Register a new user
@@ -95,6 +124,13 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    // --- NEW: CHECK BAN/SUSPEND STATUS ---
+    const status = checkAccountStatus(user);
+    if (!status.allowed) {
+      return res.status(403).json({ error: status.message });
+    }
+    // -------------------------------------
+
     // Check password
     const isPasswordValid = await user.matchPassword(password);
     if (!isPasswordValid) {
@@ -149,6 +185,14 @@ router.post('/verify', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // --- NEW: CHECK BAN/SUSPEND STATUS ON VERIFY TOO ---
+    // This prevents banned users from using an old token they already have
+    const status = checkAccountStatus(user);
+    if (!status.allowed) {
+      return res.status(403).json({ error: status.message });
+    }
+    // ---------------------------------------------------
+
     res.status(200).json({
       success: true,
       user: {
@@ -167,4 +211,3 @@ router.post('/verify', async (req, res) => {
 });
 
 export default router;
-

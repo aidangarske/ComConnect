@@ -7,6 +7,44 @@ import comconnectLogo from "../logo/COMCONNECT_Logo.png";
 
 const API_URL = 'http://localhost:8080/api';
 
+const CustomCheckbox = ({ isChecked, onChange, label }) => (
+  <HStack 
+    w="full" 
+    bg="#1a1f3a"
+    border="1px solid" 
+    borderColor={isChecked ? "#d97baa" : "#3a4456"} 
+    borderRadius="md" 
+    px={4} 
+    py={3} 
+    cursor="pointer" 
+    onClick={() => onChange(!isChecked)} 
+    spacing={3} 
+    align="center"
+    userSelect="none"
+    transition="all 0.2s"
+    _hover={{ borderColor: '#d97baa' }} 
+  >
+    <Box
+      w="20px"
+      h="20px"
+      border="1px solid"
+      borderColor={isChecked ? "#d97baa" : "#555"}
+      bg={isChecked ? "#d97baa" : "transparent"}
+      borderRadius="4px"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      transition="all 0.2s"
+    >
+      {isChecked && <Text color="white" fontSize="xs" fontWeight="bold">✓</Text>}
+    </Box>
+  
+    <Text color="white" fontSize="sm">
+      {label}
+    </Text>
+  </HStack>
+);
+
 export default function CreateJob() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
@@ -17,7 +55,9 @@ export default function CreateJob() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [budget, setBudget] = useState('')
+  const [estimatedDuration, setEstimatedDuration] = useState('')
   const [category, setCategory] = useState('other')
+  const [isRemote, setIsRemote] = useState(false)
 
   const handleCreateJob = async () => {
     if (!title || !description || !budget) {
@@ -27,6 +67,11 @@ export default function CreateJob() {
 
     if (isNaN(budget) || parseFloat(budget) <= 0) {
       setError('Budget must be a valid positive number')
+      return
+    }
+
+    if (isNaN(estimatedDuration) || parseFloat(estimatedDuration) <= 0) {
+      setError('Estimated Duration must be a valid positive number')
       return
     }
 
@@ -51,7 +96,9 @@ export default function CreateJob() {
           title,
           description,
           budget: parseFloat(budget),
-          category
+          estimatedDuration: parseFloat(estimatedDuration),
+          category,
+          isRemote
         })
       })
 
@@ -62,6 +109,7 @@ export default function CreateJob() {
         setTitle('')
         setDescription('')
         setBudget('')
+        setEstimatedDuration('')
         setCategory('other')
         setTimeout(() => {
           navigate('/dashboard-seeker')
@@ -98,7 +146,7 @@ export default function CreateJob() {
             objectFit="contain"
             maxW="100%"
             cursor="pointer"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/dashboard-seeker')}
           />
           <HStack spacing={6}>
             <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/profile')}>
@@ -233,6 +281,33 @@ export default function CreateJob() {
                 fontSize="sm"
               />
             </VStack>
+
+            {/* Estimated Duration */}
+            <VStack align="start" w="full" spacing={2}>
+              <Text color="#999" fontSize="sm" fontWeight="bold">
+                Estimated Duration (hrs) *
+              </Text>
+              <Input
+                placeholder="e.g., 1.5"
+                type="number"
+                value={estimatedDuration}
+                onChange={(e) => setEstimatedDuration(e.target.value)}
+                bg="#1a1f3a"
+                border="1px solid #3a4456"
+                borderRadius="md"
+                color="white"
+                _placeholder={{ color: '#666' }}
+                _focus={{ borderColor: '#d97baa' }}
+                py={3}
+                fontSize="sm"
+              />
+            </VStack>
+
+            <CustomCheckbox 
+              isChecked={isRemote}
+              onChange={setIsRemote}
+              label="This is a remote job (can be done from anywhere)"
+            />
 
             {/* Action Buttons */}
             <HStack spacing={4} w="full" pt={4}>

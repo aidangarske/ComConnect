@@ -19,8 +19,6 @@ import {
 } from '@chakra-ui/react';
 import comconnectLogo from "../logo/COMCONNECT_Logo.png";
 
-// Socket connection will be created via getSocket() when needed 
-
 function SendIconButton({ onClick }) {
   const [isHovered, setIsHovered] = useState(false);
   const style = {
@@ -61,7 +59,6 @@ export default function Messages() {
   // 1. Fetch Conversations
   useEffect(() => {
     const token = getToken(); 
-    // Check for passed ID from navigation state
     const passedConvoId = location.state?.newConvoId;
 
     if (!token) {
@@ -76,46 +73,64 @@ export default function Messages() {
     fetch('http://localhost:8080/api/messages/conversations', {
       headers: { 'Authorization': `Bearer ${token}` }
     })
-      .then(res => res.json())
+      .then(res => {
+        // --- BAN CHECK ---
+        if (res.status === 401 || res.status === 403) {
+            localStorage.removeItem('token');
+            navigate('/login');
+            throw new Error("Unauthorized");
+        }
+        return res.json();
+      })
       .then(data => {
         if (data && Array.isArray(data)) {
           setConversations(data);
           
-          // Logic: If we have a passed ID, use it. Otherwise default to first one.
           if (passedConvoId) {
              setSelectedConversationId(passedConvoId);
-             // Clear state so ID isn't reused on refresh
              navigate(location.pathname, { replace: true, state: {} }); 
           } else if (data.length > 0 && !selectedConversationId) {
              setSelectedConversationId(data[0]._id);
           }
         }
       })
-      .catch(err => console.error("Failed to fetch conversations:", err))
+      .catch(err => {
+         if (err.message !== "Unauthorized") console.error("Failed to fetch conversations:", err);
+      })
       .finally(() => setIsLoading(false));
       
-  }, [navigate, user, location.state]); // Dependent on location.state
+  }, [navigate, user, location.state]);
 
   // 2. Fetch Messages
   useEffect(() => {
     if (!selectedConversationId) return;
-    
-    // Check if we already have messages for this convo to avoid refetching
     if (messages[selectedConversationId]) return;
 
     const token = getToken();
     fetch(`http://localhost:8080/api/messages/${selectedConversationId}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
-      .then(res => res.json())
+      .then(res => {
+        // --- BAN CHECK ---
+        if (res.status === 401 || res.status === 403) {
+            navigate('/login');
+            throw new Error("Unauthorized");
+        }
+        return res.json();
+      })
       .then(data => {
         setMessages(prev => ({ ...prev, [selectedConversationId]: data }));
       })
       .catch(err => console.error("Failed to fetch messages:", err));
-  }, [selectedConversationId, messages]);
+  }, [selectedConversationId, messages, navigate]);
 
-  // 3. Socket Listener
+  // 3. Socket Listener (FIXED)
   useEffect(() => {
+    // --- FIX START: We must initialize socket here ---
+    const socket = getSocket(); 
+    if (!socket) return;
+    // --- FIX END ---
+
     socket.on('receiveMessage', (messageData) => {
       setMessages(prevMessages => {
         const newMessages = { ...prevMessages };
@@ -128,14 +143,13 @@ export default function Messages() {
         return newMessages;
       });
     });
+
     return () => {
-      const socket = getSocket();
       socket.off('receiveMessage');
     };
   }, []);
 
   const getDashboardPath = () => {
-    // Always read from token to avoid stale role from context
     const token = getToken();
     if (token) {
       try {
@@ -247,7 +261,6 @@ export default function Messages() {
                 p={3}
                 borderRadius="md"
                 cursor="pointer"
-                // Highlight the selected conversation
                 bg={selectedConversationId === convo._id ? '#d97baa' : 'transparent'}
                 _hover={{ bg: selectedConversationId === convo._id ? '#d97baa' : '#2a2f4a' }}
                 onClick={() => setSelectedConversationId(convo._id)}
@@ -275,8 +288,8 @@ export default function Messages() {
                   cursor="pointer" 
                   _hover={{ textDecoration: 'underline' }}
                   onClick={() => {
-                     const otherUser = selectedConversation.participants.find(p => p._id !== user.id);
-                     if(otherUser) navigate(`/profile/${otherUser._id}`);
+                      const otherUser = selectedConversation.participants.find(p => p._id !== user.id);
+                      if(otherUser) navigate(`/profile/${otherUser._id}`);
                   }}
                 >
                   Chat with {getFullName(selectedConversation.participants.find(p => p._id !== user.id))}
