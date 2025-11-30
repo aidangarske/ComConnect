@@ -196,9 +196,8 @@ export default function ServiceSeekerDashboard() {
 
   const handleJobCreated = (data) => {
     if (data.job && currentUserId) {
-      const jobPosterId = typeof data.job.postedBy === 'object' 
-        ? data.job.postedBy._id 
-        : data.job.postedBy;
+      const jobPosterId = data.job.postedBy?._id || data.job.postedBy;
+      
       if (jobPosterId === currentUserId) {
         setJobs(prevJobs => {
           if (!prevJobs.find(j => j._id === data.job._id)) {
@@ -222,10 +221,7 @@ export default function ServiceSeekerDashboard() {
 
   const handleJobApplication = (data) => {
     if (data.jobId && data.job) {
-      const jobPosterId = typeof data.job.postedBy === 'object' 
-        ? data.job.postedBy._id 
-        : data.job.postedBy;
-      
+      const jobPosterId = data.job.postedBy?._id || data.job.postedBy;
       if (jobPosterId === currentUserId) {
         const providerName = data.application?.providerName || 'A provider';
         toast.info(`New application from ${providerName} for "${data.job.title}"! Click to view.`, {
@@ -503,22 +499,20 @@ const fetchProviders = async () => {
             </Button>
           </HStack>
 
-          {/* Show posted jobs section - only for current user's jobs */}
           {currentUserId && jobs.filter(job => {
-            // Handle both object and string formats for postedBy
-            const jobPosterId = typeof job.postedBy === 'object' ? job.postedBy._id : job.postedBy
+            const jobPosterId = job.postedBy?._id || job.postedBy;
             return jobPosterId === currentUserId
           }).length > 0 && (
             <VStack align="start" w="full" spacing={4}>
               <Heading as="h2" size="lg" color="white">
                 My Posted Jobs ({jobs.filter(job => {
-                  const jobPosterId = typeof job.postedBy === 'object' ? job.postedBy._id : job.postedBy
+                  const jobPosterId = job.postedBy?._id || job.postedBy;
                   return jobPosterId === currentUserId
                 }).length})
               </Heading>
               <VStack w="full" spacing={3}>
                 {jobs.filter(job => {
-                  const jobPosterId = typeof job.postedBy === 'object' ? job.postedBy._id : job.postedBy
+                  const jobPosterId = job.postedBy?._id || job.postedBy;
                   return jobPosterId === currentUserId
                 }).map((job) => (
                   <Box
@@ -573,7 +567,7 @@ const fetchProviders = async () => {
                           >
                             Details
                           </Button>
-                          {currentUserId && (typeof job.postedBy === 'object' ? job.postedBy._id : job.postedBy) === currentUserId && (
+                          {currentUserId && (job.postedBy?._id || job.postedBy) === currentUserId && (
                             <Button
                               bg="#dc3545"
                               color="white"
