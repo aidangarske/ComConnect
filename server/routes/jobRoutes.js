@@ -1,8 +1,3 @@
-/**
- * Job Routes
- * Handles job postings, applications, and job-related operations
- */
-
 import express from 'express';
 import Job from '../models/Job.js';
 import User from '../models/User.js';
@@ -10,10 +5,8 @@ import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Helper function to get io instance from request
 const getIO = (req) => req.app.locals.io;
 
-// Helper function to populate provider details in applications
 async function populateApplications(job) {
   if (job.applications && job.applications.length > 0) {
     job.applications = await Promise.all(job.applications.map(async (app) => {
@@ -42,15 +35,9 @@ async function populateApplications(job) {
   return job;
 }
 
-/**
- * POST /api/jobs
- * Create a new job posting (only seekers and admins)
- */
 router.post('/', authenticate, authorize('seeker', 'admin'), async (req, res) => {
   try {
     const { title, description, category, budget, budgetType, deadline, estimatedDuration, address, city, isRemote } = req.body;
-
-    // Validate required fields - only title, description, and budget are required
     if (!title || !description || !budget) {
       return res.status(400).json({ error: 'Please provide all required fields' });
     }
@@ -96,10 +83,6 @@ router.post('/', authenticate, authorize('seeker', 'admin'), async (req, res) =>
   }
 });
 
-/**
- * POST /api/jobs/direct-hire
- * Create a job and immediately hire a provider (direct hire from provider list)
- */
 router.post('/direct-hire', authenticate, authorize('seeker', 'admin'), async (req, res) => {
   try {
     const { title, description, category, budget, estimatedDuration, providerId } = req.body;
@@ -182,10 +165,6 @@ router.post('/direct-hire', authenticate, authorize('seeker', 'admin'), async (r
   }
 });
 
-/**
- * GET /api/jobs
- * Get all jobs with filters
- */
 router.get('/', async (req, res) => {
   try {
     const { category, status = 'open', sort = 'newest', limit = 20 } = req.query;
@@ -220,10 +199,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-/**
- * GET /api/jobs/:id
- * Get a specific job by ID
- */
+
 router.get('/:id', async (req, res) => {
   try {
     const job = await Job.findById(req.params.id)
@@ -243,10 +219,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-/**
- * POST /api/jobs/:id/apply
- * Apply for a job (providers only)
- */
 router.post('/:id/apply', authenticate, authorize('provider'), async (req, res) => {
   try {
     const job = await Job.findById(req.params.id);
@@ -308,10 +280,7 @@ router.post('/:id/apply', authenticate, authorize('provider'), async (req, res) 
   }
 });
 
-/**
- * PUT /api/jobs/:id/select-provider
- * Select a provider for a job (job poster only)
- */
+
 router.put('/:id/select-provider', authenticate, async (req, res) => {
   try {
     const { providerId } = req.body;
@@ -373,10 +342,7 @@ router.put('/:id/select-provider', authenticate, async (req, res) => {
   }
 });
 
-/**
- * DELETE /api/jobs/:id/withdraw-application
- * Withdraw an application (provider only)
- */
+
 router.delete('/:id/withdraw-application', authenticate, authorize('provider'), async (req, res) => {
   try {
     const job = await Job.findById(req.params.id);
@@ -423,10 +389,7 @@ router.delete('/:id/withdraw-application', authenticate, authorize('provider'), 
   }
 });
 
-/**
- * PUT /api/jobs/:id/reject-application
- * Reject an application (job poster only)
- */
+
 router.put('/:id/reject-application', authenticate, async (req, res) => {
   try {
     const { providerId } = req.body;
@@ -481,10 +444,7 @@ router.put('/:id/reject-application', authenticate, async (req, res) => {
   }
 });
 
-/**
- * PUT /api/jobs/:id/complete
- * Mark a job as completed
- */
+
 router.put('/:id/complete', authenticate, async (req, res) => {
   try {
     const { completionNotes } = req.body;
@@ -533,10 +493,6 @@ router.put('/:id/complete', authenticate, async (req, res) => {
   }
 });
 
-/**
- * GET /api/jobs/hire-requests/my
- * Get pending hire requests for the current provider
- */
 router.get('/hire-requests/my', authenticate, authorize('provider'), async (req, res) => {
   try {
     const providerId = req.user.id;
@@ -571,10 +527,6 @@ router.get('/hire-requests/my', authenticate, authorize('provider'), async (req,
   }
 });
 
-/**
- * GET /api/jobs/user/:userId
- * Get jobs posted by a specific user
- */
 router.get('/user/:userId', async (req, res) => {
   try {
     const jobs = await Job.find({ postedBy: req.params.userId })
@@ -624,10 +576,6 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
-/**
- * GET /api/jobs/applications/my
- * Get all jobs that the current user (provider) has applied to
- */
 router.get('/applications/my', authenticate, authorize('provider'), async (req, res) => {
   try {
     const jobs = await Job.find({
@@ -657,10 +605,6 @@ router.get('/applications/my', authenticate, authorize('provider'), async (req, 
   }
 });
 
-/**
- * DELETE /api/jobs/:id
- * Delete a job (only job poster can delete)
- */
 router.delete('/:id', authenticate, async (req, res) => {
   try {
     const job = await Job.findById(req.params.id);
@@ -691,6 +635,40 @@ router.delete('/:id', authenticate, async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: 'Error deleting job: ' + error.message });
+  }
+});
+
+router.post('/:id/report', authenticate, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    if (!reason) return res.status(400).json({ error: 'Please provide a reason' });
+
+    const job = await Job.findById(req.params.id);
+    if (!job) return res.status(404).json({ error: 'Job not found' });
+
+    // Check if user already reported to prevent spam
+    const alreadyReported = job.reports.some(
+      r => r.reportedBy.toString() === req.user.id
+    );
+
+    if (alreadyReported) {
+      return res.status(400).json({ error: 'You have already reported this job.' });
+    }
+
+    // Add the report
+    job.reports.push({
+      reportedBy: req.user.id,
+      reason: reason
+    });
+    
+    // Automatically flag the job for admin review
+    job.isFlagged = true;
+
+    await job.save();
+    res.json({ success: true, message: 'Job reported to admins.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

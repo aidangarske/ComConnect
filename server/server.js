@@ -9,7 +9,7 @@ import { Server } from 'socket.io';
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
-
+import ticketRoutes from './routes/ticketRoutes.js';
 import Message from './models/Message.js';
 import Conversation from './models/Conversation.js';
 import authRoutes from './routes/authRoutes.js';
@@ -66,6 +66,7 @@ app.use('/api/jobs', jobRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/tickets', ticketRoutes);
 
 io.on('connection', (socket) => {
   console.log('A user connected via WebSocket:', socket.id);

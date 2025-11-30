@@ -1,9 +1,3 @@
-/**
- * Token Utilities
- * Handles token retrieval with tab isolation support
- */
-
-// Get the current tab ID
 const getTabId = () => {
   let tabId = sessionStorage.getItem('tabId');
   if (!tabId) {
@@ -13,10 +7,6 @@ const getTabId = () => {
   return tabId;
 };
 
-/**
- * Get the authentication token for the current tab
- * Checks sessionStorage first (tab-specific), then falls back to localStorage
- */
 export const getToken = () => {
   const tabId = getTabId();
   // Check sessionStorage first (tab-specific token)
@@ -28,10 +18,7 @@ export const getToken = () => {
   return localStorage.getItem('token');
 };
 
-/**
- * Set the authentication token for the current tab
- * Stores in both sessionStorage (tab-specific) and localStorage (persistence)
- */
+
 export const setToken = (token) => {
   const tabId = getTabId();
   if (token) {
@@ -43,12 +30,34 @@ export const setToken = (token) => {
   }
 };
 
-/**
- * Remove the authentication token for the current tab
- */
 export const removeToken = () => {
   const tabId = getTabId();
   sessionStorage.removeItem(`token_${tabId}`);
   localStorage.removeItem('token');
+};
+
+export const apiFetch = async (endpoint, options = {}) => {
+  const token = getToken();
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`http://localhost:8080/api${endpoint}`, {
+    ...options,
+    headers
+  });
+
+  if (response.status === 401) {
+     removeToken(); 
+     window.location.href = '/login'; 
+  }
+
+  return response;
 };
 

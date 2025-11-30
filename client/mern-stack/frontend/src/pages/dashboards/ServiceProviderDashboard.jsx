@@ -16,21 +16,16 @@ const API_URL = 'http://localhost:8080/api';
 function calculateDistance(lat1, lon1, lat2, lon2) {
   if (!lat1 || !lon1 || !lat2 || !lon2) return null;
   
-  const R = 3959; // Radius of Earth in miles
+  const R = 3959; 
   const dLat = (lat2 - lat1) * (Math.PI / 180);
   const dLon = (lon2 - lon1) * (Math.PI / 180);
   const a = 
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return (R * c).toFixed(1); // Returns string like "5.2"
+  return (R * c).toFixed(1); 
 }
 
-/**
- * Mock job postings data - sample jobs that service providers can apply to
- * Each job includes: title, price, distance, time estimate, category, poster info, rating
- * In production, this would come from a backend API
- */
 const mockJobs = [
   {
     id: 1,
@@ -130,14 +125,8 @@ const mockJobs = [
   },
 ];
 
-/**
- * JobCard Component - displays individual job posting in a beautiful card format
- * Shows job title, price, person posting it, their profile, rating, and apply button
- * Includes hover effect (lifts up with shadow) for better interactivity
- * Handles both mock jobs and real API jobs
- */
+
 function JobCard({ job, onApply, onCardClick, user }) {
-  // Handle both mock and real job data
   const title = job.title || 'Untitled Job'
   const price = job.price || job.budget || 0
   const rating = job.rating || job.posterRating || 0
@@ -293,10 +282,6 @@ function JobCard({ job, onApply, onCardClick, user }) {
   );
 }
 
-/**
- * ServiceProviderDashboard - Main page for service providers to find and apply for jobs
- * Features: filter system (by relevance, location, price, rating), job cards with apply buttons
- */
 export default function ServiceProviderDashboard() {
   const navigate = useNavigate()
   const { role, user } = useRole()
@@ -512,10 +497,6 @@ export default function ServiceProviderDashboard() {
     return '/login';
   }
 
-  /**
-   * Handles filter button clicks - sorts jobs based on selected filter
-   * Supports: Relevance (original), Location (nearest), Price (highest paying), Rating (best rated)
-   */
   const handleFilterChange = (filter) => {
     setFilterType(filter)
     let sorted = [...realJobs]
@@ -599,13 +580,15 @@ export default function ServiceProviderDashboard() {
               onClick={() => window.location.reload()}
             />
 
-            {/* Navigation links on the right */}
             <HStack spacing={6}>
               <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/profile')}>
                 Profile
               </Text>
               <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/messages')}>
                 Messages
+              </Text>
+              <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/support')}>
+                Support
               </Text>
             </HStack>
           </HStack>

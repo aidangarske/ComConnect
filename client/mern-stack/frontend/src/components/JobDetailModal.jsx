@@ -15,6 +15,7 @@ import { toast } from 'react-toastify';
 import { startChatWithRecipient } from '../utils/chatUtils.js';
 import CompleteJobModal from './CompleteJobModal';
 import { getSocket } from '../utils/socket';
+import ReportJobButton from './ReportJobButton';
 
 const API_URL = 'http://localhost:8080/api';
 
@@ -36,7 +37,6 @@ export default function JobDetailModal({ isOpen, onClose, jobId }) {
   useEffect(() => {
     if (isOpen) {
       const socket = getSocket();
-      // Listen for real-time job updates
       socket.on('jobApplication', handleJobApplication);
       socket.on('jobUpdated', handleJobUpdated);
       socket.on('jobProviderSelected', handleJobProviderSelected);
@@ -105,7 +105,7 @@ export default function JobDetailModal({ isOpen, onClose, jobId }) {
   };
 
   const handleJobCompleteSuccess = () => {
-    fetchJob(); // Refresh job data
+    fetchJob(); 
   };
 
   const handleApply = async () => {
@@ -129,7 +129,7 @@ export default function JobDetailModal({ isOpen, onClose, jobId }) {
 
       if (response.ok) {
         toast.success('Application submitted successfully!');
-        fetchJob(); // Refresh job data
+        fetchJob(); 
       } else {
         toast.error(data.error || 'Failed to apply');
       }
@@ -224,6 +224,11 @@ export default function JobDetailModal({ isOpen, onClose, jobId }) {
               <>
                 <Text fontSize="2xl" fontWeight="bold">{job.title}</Text>
                 <HStack spacing={2}>
+                  
+                  {/* Report Button (Keeps its red semantic color) */}
+                  {!isJobOwner && <ReportJobButton jobId={jobId} />}
+
+                  {/* Status Badges (Keep semantic colors) */}
                   <Badge
                     bg={
                       job.status === 'open' ? '#d97baa' :
@@ -248,14 +253,20 @@ export default function JobDetailModal({ isOpen, onClose, jobId }) {
                       Applied
                     </Badge>
                   )}
+                  
+                  {/* --- UPDATED TOP "X" BUTTON --- */}
+                  {/* Consistent outline style that hovers to brand pink */}
                   <Button
-                    variant="ghost"
                     size="sm"
+                    variant="outline"
+                    borderColor="whiteAlpha.400"
+                    color="gray.300"
+                    _hover={{ bg: 'transparent', color: '#d97baa', borderColor: '#d97baa' }}
                     onClick={onClose}
-                    _hover={{ bg: 'rgba(255, 255, 255, 0.1)' }}
                   >
                     ✕
                   </Button>
+
                 </HStack>
               </>
             ) : null}
@@ -303,8 +314,6 @@ export default function JobDetailModal({ isOpen, onClose, jobId }) {
                       {job.isRemote ? (
                         <Badge colorScheme="pink" variant="solid" bg="#d97baa">REMOTE WORK</Badge>
                       ) : (
-                        // Show city/address from database. Note: We don't calculate distance here because
-                        // we fetched by ID and don't have user coordinates in this component's scope.
                         job.city || job.address || "Location provided upon hiring"
                       )}
                     </Text>
@@ -455,6 +464,7 @@ export default function JobDetailModal({ isOpen, onClose, jobId }) {
             bg="#1a1f3a"
           >
             <HStack spacing={3} justify="flex-end">
+              {/* Primary Actions (Keep solid brand pink/green) */}
               {!isJobOwner && role === 'provider' && job.status === 'open' && (
                 <Button
                   bg="#d97baa"
@@ -509,9 +519,17 @@ export default function JobDetailModal({ isOpen, onClose, jobId }) {
                   Rate Provider
                 </Button>
               )}
-              <Button variant="ghost" onClick={onClose}>
+              
+              <Button 
+                variant="outline" 
+                borderColor="whiteAlpha.400" 
+                color="gray.300" 
+                _hover={{ bg: 'transparent', color: '#d97baa', borderColor: '#d97baa' }}
+                onClick={onClose}
+              >
                 Close
               </Button>
+
             </HStack>
           </Box>
         )}

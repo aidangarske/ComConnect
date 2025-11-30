@@ -1,15 +1,9 @@
 import express from 'express';
-// Ensure these match your actual model filenames in the models folder
 import Job from '../models/Job.js'; 
 import User from '../models/User.js';
+import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
-
-// ==========================================
-// 1. CONTENT MANAGEMENT (JOBS)
-// ==========================================
-
-// GET all content (jobs) for the admin dashboard
 router.get('/content', async (req, res) => {
   try {
     const jobs = await Job.find().sort({ createdAt: -1 });
@@ -20,13 +14,55 @@ router.get('/content', async (req, res) => {
   }
 });
 
-// UPDATE status (Approve/Reject)
+router.get('/content/reported', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const reportedJobs = await Job.find({ reports: { $exists: true, $not: { $size: 0 } } })
+      .populate('postedBy', 'firstName lastName email') 
+      .populate('reports.reportedBy', 'firstName lastName')
+      .sort({ 'reports.createdAt': -1 });
+
+    res.json({ success: true, jobs: reportedJobs });
+  } catch (error) {
+    console.error('Fetch Reported Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete('/content/:jobId', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const job = await Job.findByIdAndDelete(req.params.jobId);
+    
+    if (!job) return res.status(404).json({ error: 'Job not found' });
+    const io = req.app.locals.io;
+    if (io) io.emit('jobDeleted', { jobId: req.params.jobId });
+
+    res.json({ success: true, message: 'Job removed successfully' });
+  } catch (error) {
+    console.error('Delete Job Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/content/:jobId/dismiss', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.jobId);
+    if (!job) return res.status(404).json({ error: 'Job not found' });
+
+    job.reports = []; 
+    job.isFlagged = false; 
+    await job.save();
+
+    res.json({ success: true, message: 'Reports dismissed' });
+  } catch (error) {
+    console.error('Dismiss Report Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.put('/content/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body; 
-
-    // 1. Update the job
     const updatedJob = await Job.findByIdAndUpdate(
       id, 
       { status: status },
@@ -34,20 +70,13 @@ router.put('/content/:id/status', async (req, res) => {
     );
 
     if (!updatedJob) return res.status(404).json({ success: false, message: 'Job not found' });
-
-    // 2. SOCKET EMISSION (Real-time update)
     const io = req.app.locals.io;
     if (io) {
-      // We need to populate the user info so the frontend card renders correctly
       const populatedJob = await Job.findById(updatedJob._id)
         .populate('postedBy', 'username firstName lastName rating');
-
-      // If we just Approved it, it's effectively "Created" for the Service Providers
       if (status === 'approved') {
         io.emit('jobCreated', { job: populatedJob });
       }
-      
-      // Also emit update for anyone else listening
       io.emit('jobUpdated', { jobId: id, job: populatedJob });
     }
 
@@ -58,11 +87,6 @@ router.put('/content/:id/status', async (req, res) => {
   }
 });
 
-// ==========================================
-// 2. USER MANAGEMENT
-// ==========================================
-
-// GET all users
 router.get('/users', async (req, res) => {
   try {
     const users = await User.find().select('-password').sort({ createdAt: -1 });
@@ -73,14 +97,11 @@ router.get('/users', async (req, res) => {
   }
 });
 
-// DELETE a user
 router.delete('/users/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const deletedUser = await User.findByIdAndDelete(id);
     if (!deletedUser) return res.status(404).json({ success: false, message: 'User not found' });
-    
-    // NEW: Emit event so user lists update automatically
     const io = req.app.locals.io;
     if (io) io.emit('userDeleted', { userId: id });
 
@@ -91,11 +112,6 @@ router.delete('/users/:id', async (req, res) => {
   }
 });
 
-// ==========================================
-// 3. MODERATION ACTIONS (BAN/SUSPEND)
-// ==========================================
-
-// BAN a user
 router.post('/users/:id/ban', async (req, res) => {
   try {
     const { id } = req.params;
@@ -116,10 +132,8 @@ router.post('/users/:id/ban', async (req, res) => {
 
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    // NEW: Force logout the banned user if they are online
     const io = req.app.locals.io;
     if (io) {
-        // Emit a specific event that your frontend App.js could listen to for force-logout
         io.emit('userBanned', { userId: id, reason });
     }
 
@@ -130,7 +144,6 @@ router.post('/users/:id/ban', async (req, res) => {
   }
 });
 
-// UNBAN a user
 router.post('/users/:id/unban', async (req, res) => {
   try {
     const { id } = req.params;
@@ -153,7 +166,6 @@ router.post('/users/:id/unban', async (req, res) => {
   }
 });
 
-// SUSPEND a user
 router.post('/users/:id/suspend', async (req, res) => {
   try {
     const { id } = req.params;
@@ -187,7 +199,6 @@ router.post('/users/:id/suspend', async (req, res) => {
   }
 });
 
-// UNSUSPEND a user
 router.post('/users/:id/unsuspend', async (req, res) => {
   try {
     const { id } = req.params;
