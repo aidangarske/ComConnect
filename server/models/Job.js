@@ -77,7 +77,7 @@
         required: true
       },
       estimatedDuration: {
-        type: Number,
+        type: String,
         required: true
       },
 
