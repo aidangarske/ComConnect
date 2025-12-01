@@ -23,9 +23,13 @@ import adminRoutes from './routes/adminRoutes.js';
 const app = express();
 
 const server = http.createServer(app);
+
+// Allow frontend URL from environment variable (for Render deployment)
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // Your frontend's port
+    origin: FRONTEND_URL,
     credentials: true,
     methods: ["GET", "POST"]
   }
@@ -33,7 +37,7 @@ const io = new Server(server, {
 
 // Middleware
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: FRONTEND_URL,
   credentials: true
 }));
 // Increase body size limit to handle base64 encoded images (20MB)
