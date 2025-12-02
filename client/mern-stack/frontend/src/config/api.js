@@ -1,14 +1,13 @@
 /**
  * Centralized API Configuration
- * Uses environment variable in production, localhost in development
+ * Production backend: https://comconnect-backend-xzwk.onrender.com
+ * Development backend: http://localhost:8080
+ * Last updated: 2025-12-02
  */
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'development' 
-  ? 'http://localhost:8080/api'
-  : 'https://comconnect-backend-xzwk.onrender.com/api');
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.MODE === 'development'
-  ? 'http://localhost:8080'
-  : 'https://comconnect-backend-xzwk.onrender.com');
+// Always use production backend when not in development mode
+const API_URL = 'https://comconnect-backend-xzwk.onrender.com/api';
+const SOCKET_URL = 'https://comconnect-backend-xzwk.onrender.com';
 
 export { API_URL, SOCKET_URL };
 
