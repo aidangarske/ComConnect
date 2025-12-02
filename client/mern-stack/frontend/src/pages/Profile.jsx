@@ -12,7 +12,7 @@ import LocationSelector from '../components/LocationSelector';
 
 import comconnectLogo from "../logo/COMCONNECT_Logo.png";
 
-const API_URL = 'http://localhost:8080/api';
+import { API_URL } from '../config/api.js';
 
 // Specialty icons mapping
 const SPECIALTY_ICONS = {

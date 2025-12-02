@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { startChatWithRecipient } from '../utils/chatUtils';
 import exampleProfilepic from "../profile_picture/OIP.jpg";
 
-const API_URL = 'http://localhost:8080/api';
+import { API_URL } from '../config/api.js';
 
 // Specialty icons mapping (must match Profile.jsx)
 const SPECIALTY_ICONS = {

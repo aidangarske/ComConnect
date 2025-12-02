@@ -17,7 +17,7 @@ import CompleteJobModal from './CompleteJobModal';
 import { getSocket } from '../utils/socket';
 import ReportJobButton from './ReportJobButton';
 
-const API_URL = 'http://localhost:8080/api';
+import { API_URL } from '../config/api.js';
 
 export default function JobDetailModal({ isOpen, onClose, jobId }) {
   const navigate = useNavigate();
