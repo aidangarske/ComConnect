@@ -630,8 +630,8 @@ export default function ServiceProviderDashboard() {
                 <VStack spacing={3} w="full" align="stretch">
                   {hireRequests.map((job) => {
                     const seekerName = job.postedBy 
-                      ? `${job.postedBy.firstName} ${job.postedBy.lastName}`.trim() || job.postedBy.username
-                      : job.posterName || 'Unknown Seeker';
+                      ? (`${job.postedBy.firstName || ''} ${job.postedBy.lastName || ''}`.trim() || job.postedBy.username || 'Unknown Seeker')
+                      : (job.posterName || 'Unknown Seeker');
                     return (
                       <Box
                         key={job._id}
