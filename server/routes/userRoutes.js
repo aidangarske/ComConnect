@@ -32,7 +32,9 @@ router.get('/profile', authenticate, async (req, res) => {
       phone: user.phone,
       specialties: user.specialties,
       rating: user.rating,
-      profilePicture: user.profilePicture
+      profilePicture: user.profilePicture,
+      address: user.address,
+      location: user.location 
     });
   } catch (error) {
     res.status(500).json({ error: 'Error fetching profile: ' + error.message });
@@ -148,6 +150,41 @@ router.get('/providers', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: 'Error fetching providers: ' + error.message });
+  }
+});
+
+router.put('/profile/location', authenticate, async (req, res) => {
+  try {
+    const { coordinates, address } = req.body; 
+
+    if (!coordinates || coordinates.length !== 2) {
+      return res.status(400).json({ error: 'Invalid coordinates' });
+    }
+
+    const user = await User.findById(req.user.id);
+
+    user.location = {
+      type: 'Point',
+      coordinates: coordinates
+    };
+    if (address) {
+      if (!user.address) user.address = {};
+      user.address.city = address; 
+    }
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Location updated',
+      user: {
+        location: user.location,
+        address: user.address
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error updating location' });
   }
 });
 

@@ -1,155 +1,145 @@
-/**
- * Job Model
- * Represents a job posting created by a Service Seeker
- */
+  import mongoose from 'mongoose';
 
-import mongoose from 'mongoose';
-
-export const jobSchema = new mongoose.Schema(
-  {
-    // Job Details
-    title: {
-      type: String,
-      required: [true, 'Please provide a job title'],
-      trim: true,
-      maxlength: 100
-    },
-    description: {
-      type: String,
-      required: [true, 'Please provide a job description'],
-      maxlength: 2000
-    },
-    category: {
-      type: String,
-      required: true,
-      enum: [
-        'manual labor',
-        'tutoring',
-        'painting',
-        'cleaning',
-        'gardening',
-        'automotive',
-        'design',
-        'assembly',
-        'plumbing',
-        'electrical',
-        'photography',
-        'music',
-        'writing',
-        'other'
-      ]
-    },
-
-    // Pricing
-    budget: {
-      type: Number,
-      required: true,
-      min: 0
-    },
-    budgetType: {
-      type: String,
-      enum: ['fixed', 'hourly'],
-      default: 'fixed'
-    },
-
-    // Seeker who posted the job
-    postedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
-    },
-    posterName: String,
-    posterRating: {
-      type: Number,
-      default: 0
-    },
-
-    // Location
-    location: {
-      type: {
+  export const jobSchema = new mongoose.Schema(
+    {
+      title: {
         type: String,
-        enum: ['Point'],
-        default: 'Point'
+        required: [true, 'Please provide a job title'],
+        trim: true,
+        maxlength: 100
       },
-      coordinates: {
-        type: [Number], // [longitude, latitude]
-        default: [0, 0]
-      }
-    },
-    address: String,
-    city: String,
-
-    // Timeline
-    deadline: {
-      type: Date,
-      required: true
-    },
-    estimatedDuration: {
-      type: Number,
-      required: true
-    },
-
-    // Status
-    status: {
-      type: String,
-      enum: ['open', 'in-progress', 'completed', 'cancelled'],
-      default: 'open'
-    },
-
-    // Applications
-    applications: [
-      {
-        providerId: mongoose.Schema.Types.ObjectId,
-        providerName: String,
-        providerRating: Number,
-        appliedAt: {
-          type: Date,
-          default: Date.now
-        },
-        status: {
+      description: {
+        type: String,
+        required: [true, 'Please provide a job description'],
+        maxlength: 2000
+      },
+      category: {
+        type: String,
+        required: true,
+        enum: [
+          'manual labor',
+          'tutoring',
+          'painting',
+          'cleaning',
+          'gardening',
+          'automotive',
+          'design',
+          'assembly',
+          'plumbing',
+          'electrical',
+          'photography',
+          'music',
+          'writing',
+          'other'
+        ]
+      },
+      budget: {
+        type: Number,
+        required: true,
+        min: 0
+      },
+      budgetType: {
+        type: String,
+        enum: ['fixed', 'hourly'],
+        default: 'fixed'
+      },
+      postedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+      },
+      posterName: String,
+      posterRating: {
+        type: Number,
+        default: 0
+      },
+      location: {
+        type: {
           type: String,
-          enum: ['pending', 'accepted', 'rejected'],
-          default: 'pending'
+          enum: ['Point'],
+          default: 'Point'
         },
-        isDirectHire: {
-          type: Boolean,
-          default: false
+        coordinates: {
+          type: [Number],
+          default: [0, 0]
         }
-      }
-    ],
-    selectedProvider: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      default: null
-    },
+      },
 
-    // Review
-    completed: {
-      type: Boolean,
-      default: false
-    },
-    completedAt: Date,
-    completionNotes: {
-      type: String,
-      maxlength: 2000
-    },
+      isRemote: {
+        type: Boolean,
+        default: false
+      },
+      
+      address: String,
+      city: String,
+      deadline: {
+        type: Date,
+        required: true
+      },
+      estimatedDuration: {
+        type: String,
+        required: true
+      },
 
-    // Timestamps
-    createdAt: {
-      type: Date,
-      default: Date.now
+      status: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected', 'open', 'in-progress', 'completed', 'cancelled'],
+        default: 'open'
+      },
+      applications: [
+        {
+          providerId: mongoose.Schema.Types.ObjectId,
+          providerName: String,
+          providerRating: Number,
+          appliedAt: {
+            type: Date,
+            default: Date.now
+          },
+          status: {
+            type: String,
+            enum: ['pending', 'accepted', 'rejected'],
+            default: 'pending'
+          },
+          isDirectHire: {
+            type: Boolean,
+            default: false
+          }
+        }
+      ],
+      selectedProvider: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+      },
+      completed: {
+        type: Boolean,
+        default: false
+      },
+      completedAt: Date,
+      completionNotes: {
+        type: String,
+        maxlength: 2000
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now
+      },
+      updatedAt: {
+        type: Date,
+        default: Date.now
+      },
+      reports: [{
+      reportedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      reason: { type: String, required: true },
+      createdAt: { type: Date, default: Date.now }
+      }],
+    isFlagged: { type: Boolean, default: false }
     },
-    updatedAt: {
-      type: Date,
-      default: Date.now
-    }
-  },
-  { timestamps: true }
-);
+    { timestamps: true }
+  );
 
-// Create geospatial index for location-based queries
-jobSchema.index({ location: '2dsphere' });
-jobSchema.index({ postedBy: 1, status: 1 });
+  jobSchema.index({ location: '2dsphere' });
+  jobSchema.index({ postedBy: 1, status: 1 });
 
-export default mongoose.model('Job', jobSchema);
+  export default mongoose.model('Job', jobSchema);
 

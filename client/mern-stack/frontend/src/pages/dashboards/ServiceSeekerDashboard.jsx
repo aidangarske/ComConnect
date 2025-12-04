@@ -16,11 +16,6 @@ import exampleProfilepic from "../../profile_picture/OIP.jpg";
 
 const API_URL = 'http://localhost:8080/api';
 
-/**
- * Mock provider profiles data - used to display available service providers
- * Each provider has: id, username, name, rating, distance, image, specialties, and hourly rate
- * In production, this would come from a backend API
- */
 const mockProviders = [
   {
     id: 1,
@@ -42,11 +37,17 @@ const mockProviders = [
     specialties: ['Tutoring', 'Writing', 'Design'],
     hourlyRate: 50
   },
-  // ... add other mock providers if you wish
 ];
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+  const R = 3959; 
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return (R * c).toFixed(1);
+}
 
-// --- 1. Updated ProviderCard Component ---
-// Simplified card that opens modal on click
 function ProviderCard({ provider, onClick }) {
   const username = provider.username || `@${provider.firstName?.toLowerCase() || 'user'}`
   const rating = provider.rating || 0
@@ -54,9 +55,14 @@ function ProviderCard({ provider, onClick }) {
   const specialties = provider.specialties && provider.specialties.length > 0 
     ? provider.specialties 
     : ['Professional Services']
-    /*List of skills to select from the skills menu */
   const hourlyRate = provider.hourlyRate || 0
-  const distance = provider.distance || 0
+  const distance = provider.distance;
+  const formatDistance = (dist) => {
+    if (dist === null || dist === undefined || dist === '') return 'Location N/A';
+    const numDist = parseFloat(dist);
+    if (numDist > 12000) return 'Location N/A'; 
+    return `${numDist.toFixed(1)} miles`;
+  };
   
   return (
     <Box
@@ -74,13 +80,11 @@ function ProviderCard({ provider, onClick }) {
       transition="all 0.3s ease"
       onClick={onClick}
     >
-      {/* Top section */}
       <HStack position="absolute" top="20px" left="20px" right="20px" justify="space-between">
         <Text fontSize="sm" fontWeight="bold" color="#d97baa">{username}</Text>
         <Text fontSize="sm" color="white">{rating}⭐</Text>
       </HStack>
 
-      {/* Profile Image */}
       <Box
         as="img"
         position="absolute" 
@@ -111,7 +115,6 @@ function ProviderCard({ provider, onClick }) {
         {name}
       </Text>
 
-      {/* Specialties Preview */}
       <VStack position="absolute" top="200px" left="50%" transform="translateX(-50%)" spacing={0} align="center" w="80%">
         {specialties.slice(0, 2).map((specialty, idx) => (
           <Text key={idx} fontSize="xs" color="#aaa" noOfLines={1}>• {specialty}</Text>
@@ -123,7 +126,7 @@ function ProviderCard({ provider, onClick }) {
 
       {/* Info */}
       <Text position="absolute" fontSize="sm" left="50%" bottom="20px" color="#aaa" transform="translateX(-50%)" textAlign="center" w="90%" noOfLines={1}>
-        📍 {distance}mi | ${hourlyRate}/hr
+        📍 {formatDistance(distance)} | ${hourlyRate}/hr
       </Text>
     </Box>
   );
@@ -150,13 +153,9 @@ const OTHER_SKILL_LABEL = 'Other skills ⭐';
     OTHER_SKILL_LABEL,
   ];
 
-/**
- * ServiceSeekerDashboard - Main page for service seekers to find and hire providers
- * Features: filter system (by skills, location, price, rating), provider cards with hire buttons
- */
+
 export default function ServiceSeekerDashboard() {
 
-  // Router navigation for clicks on logo and header links.
   const navigate = useNavigate()
   const { role } = useRole()
   const [filterType, setFilterType] = useState('Skills')
@@ -182,7 +181,6 @@ export default function ServiceSeekerDashboard() {
     return () => clearInterval(interval)
   }, [])
 
-  // Socket.io real-time updates
   useEffect(() => {
     const socket = getSocket();
     socket.on('jobCreated', handleJobCreated);
@@ -194,17 +192,14 @@ export default function ServiceSeekerDashboard() {
       socket.off('jobUpdated', handleJobUpdated);
       socket.off('jobApplication', handleJobApplication);
     };
-  }, [currentUserId]); // Removed jobs from dependencies to prevent re-subscribing
+  }, [currentUserId]);
 
   const handleJobCreated = (data) => {
-    // Add new job to the list if it belongs to current user
     if (data.job && currentUserId) {
-      const jobPosterId = typeof data.job.postedBy === 'object' 
-        ? data.job.postedBy._id 
-        : data.job.postedBy;
+      const jobPosterId = data.job.postedBy?._id || data.job.postedBy;
+      
       if (jobPosterId === currentUserId) {
         setJobs(prevJobs => {
-          // Check if job already exists
           if (!prevJobs.find(j => j._id === data.job._id)) {
             return [data.job, ...prevJobs];
           }
@@ -215,7 +210,6 @@ export default function ServiceSeekerDashboard() {
   };
 
   const handleJobUpdated = (data) => {
-    // Update job in the list
     if (data.jobId && data.job) {
       setJobs(prevJobs => 
         prevJobs.map(job => 
@@ -226,15 +220,9 @@ export default function ServiceSeekerDashboard() {
   };
 
   const handleJobApplication = (data) => {
-    // Update job when new application is received
     if (data.jobId && data.job) {
-      // Check if this is a new application for one of the user's jobs
-      const jobPosterId = typeof data.job.postedBy === 'object' 
-        ? data.job.postedBy._id 
-        : data.job.postedBy;
-      
+      const jobPosterId = data.job.postedBy?._id || data.job.postedBy;
       if (jobPosterId === currentUserId) {
-        // Show notification for new application
         const providerName = data.application?.providerName || 'A provider';
         toast.info(`New application from ${providerName} for "${data.job.title}"! Click to view.`, {
           onClick: () => {
@@ -259,13 +247,9 @@ export default function ServiceSeekerDashboard() {
     }
   };
 
-  // Filter providers when selectedSkills or realProviders change
-
-// helper to normalize labels / specialties (lowercase, no emoji, no extra spaces)
 const normalizeSkill = (str) =>
   str
     ?.toLowerCase()
-    // strip emoji & symbols (rough but works well for your labels)
     .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}]/gu, '')
     .trim();
 
@@ -342,70 +326,59 @@ useEffect(() => {
 const fetchProviders = async () => {
   try {
     setLoadingProviders(true);
+    const token = getToken();
+    let userCoordinates = null;
+
+    if (token) {
+        try {
+            const profileRes = await fetch(`${API_URL}/users/profile`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const profileData = await profileRes.json();
+            if (profileData.location?.coordinates) {
+                const [lng, lat] = profileData.location.coordinates;
+                if (lat !== 0 || lng !== 0) userCoordinates = [lng, lat];
+            }
+        } catch(e) {}
+      } 
 
     const response = await fetch(`${API_URL}/users/providers`);
     const data = await response.json();
 
     if (response.ok && data.providers) {
-      // Debug: Log provider data to see if email/phone are included
-      console.log(
-        'Fetched providers:',
-        data.providers.map((p) => ({
-          name: `${p.firstName} ${p.lastName}`,
-          email: p.email,
-          phone: p.phone,
-          showEmail: p.privacySettings?.showEmail,
-          showPhone: p.privacySettings?.showPhone,
-        }))
-      );
+        const mappedProviders = data.providers.map((provider) => {
+          let specialties = [];
+          if (Array.isArray(provider.specialties)) specialties = provider.specialties;
+          else if (typeof provider.specialties === 'string' && provider.specialties.trim().length > 0) {
+            specialties = provider.specialties.split(',').map((s) => s.trim()).filter(Boolean);
+          }
+          let dist = null;
+          if (userCoordinates && provider.location?.coordinates) {
+             const [pLng, pLat] = provider.location.coordinates;
+             dist = calculateDistance(userCoordinates[1], userCoordinates[0], pLat, pLng);
+          }
 
-      const mappedProviders = data.providers.map((provider) => {
-        // 🔹 normalize specialties into an array
-        let specialties = [];
-        if (Array.isArray(provider.specialties)) {
-          specialties = provider.specialties;
-        } else if (
-          typeof provider.specialties === 'string' &&
-          provider.specialties.trim().length > 0
-        ) {
-          specialties = provider.specialties
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean);
-        }
+          return {
+            ...provider,
+            image: provider.profilePicture || provider.image || exampleProfilepic,
+            name: `${provider.firstName || ''} ${provider.lastName || ''}`.trim() || provider.username || 'Service Provider',
+            username: provider.username ? (provider.username.startsWith('@') ? provider.username : `@${provider.username}`) : `@${provider.firstName?.toLowerCase() || 'user'}`,
+            rating: provider.rating || 0,
+            hourlyRate: provider.hourlyRate || 0,
+            specialties,
+            distance: dist, 
+          };
+        });
 
-        return {
-          ...provider,
-          image:
-            provider.profilePicture || provider.image || exampleProfilepic,
-          name:
-            `${provider.firstName || ''} ${provider.lastName || ''}`.trim() ||
-            provider.username ||
-            'Service Provider',
-          username: provider.username
-            ? provider.username.startsWith('@')
-              ? provider.username
-              : `@${provider.username}`
-            : `@${provider.firstName?.toLowerCase() || 'user'}`,
-          rating: provider.rating || 0,
-          hourlyRate: provider.hourlyRate || 0,
-          specialties, // use normalized array
-          distance: provider.distance || 0,
-        };
-      });
-
-      setRealProviders(mappedProviders);
-      setFilteredProviders(mappedProviders);
-    } else {
-      // if response not ok or no providers, fall back to mock
+        setRealProviders(mappedProviders);
+        setFilteredProviders(mappedProviders);
+      } else {
+        setFilteredProviders(mockProviders);
+      }
+    } catch (err) {
+      console.error('Failed to fetch providers:', err);
       setFilteredProviders(mockProviders);
+    } finally {
+      setLoadingProviders(false);
     }
-  } catch (err) {
-    console.error('Failed to fetch providers:', err);
-    setFilteredProviders(mockProviders);
-  } finally {
-    setLoadingProviders(false);
-  }
 };
 
 
@@ -435,16 +408,10 @@ const fetchProviders = async () => {
     finally { setDeletingJobId(null) }
   }
 
-  // --- Use the utility function ---
   const handleMessageProvider = (recipientId) => {
-     // We pass the recipientId and the navigate function to our utility
      startChatWithRecipient(recipientId, navigate);
   };
 
-    /**
-   * Handles filter button clicks - sorts providers based on selected filter
-   * Supports: Skills, Location (nearest), Price (cheapest), Rating (best)
-   */
   const handleFilterChange = (filter) => {
     setFilterType(filter)
     let sorted = [...realProviders]
@@ -453,7 +420,11 @@ const fetchProviders = async () => {
         sorted.sort((a, b) => (a.hourlyRate || 0) - (b.hourlyRate || 0))
         break
       case 'Location':
-        sorted.sort((a, b) => (a.distance || 0) - (b.distance || 0))
+        sorted.sort((a, b) => {
+            const dA = a.distance ? parseFloat(a.distance) : 99999;
+            const dB = b.distance ? parseFloat(b.distance) : 99999;
+            return dA - dB;
+        });
         break
       case 'Rating':
         sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0))
@@ -496,8 +467,15 @@ const fetchProviders = async () => {
               onClick={() => window.location.reload()}
             />
             <HStack spacing={6}>
-              <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/profile')}>Profile</Text>
-              <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/messages')}>Messages</Text>
+              <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/profile')}>
+                Profile
+              </Text>
+              <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/messages')}>
+                Messages
+              </Text>
+              <Text color="black" fontSize="md" cursor="pointer" onClick={() => navigate('/support')}>
+                Support
+              </Text>
             </HStack>
           </HStack>
       </Box>
@@ -521,22 +499,20 @@ const fetchProviders = async () => {
             </Button>
           </HStack>
 
-          {/* Show posted jobs section - only for current user's jobs */}
           {currentUserId && jobs.filter(job => {
-            // Handle both object and string formats for postedBy
-            const jobPosterId = typeof job.postedBy === 'object' ? job.postedBy._id : job.postedBy
+            const jobPosterId = job.postedBy?._id || job.postedBy;
             return jobPosterId === currentUserId
           }).length > 0 && (
             <VStack align="start" w="full" spacing={4}>
               <Heading as="h2" size="lg" color="white">
                 My Posted Jobs ({jobs.filter(job => {
-                  const jobPosterId = typeof job.postedBy === 'object' ? job.postedBy._id : job.postedBy
+                  const jobPosterId = job.postedBy?._id || job.postedBy;
                   return jobPosterId === currentUserId
                 }).length})
               </Heading>
               <VStack w="full" spacing={3}>
                 {jobs.filter(job => {
-                  const jobPosterId = typeof job.postedBy === 'object' ? job.postedBy._id : job.postedBy
+                  const jobPosterId = job.postedBy?._id || job.postedBy;
                   return jobPosterId === currentUserId
                 }).map((job) => (
                   <Box
@@ -591,7 +567,7 @@ const fetchProviders = async () => {
                           >
                             Details
                           </Button>
-                          {currentUserId && (typeof job.postedBy === 'object' ? job.postedBy._id : job.postedBy) === currentUserId && (
+                          {currentUserId && (job.postedBy?._id || job.postedBy) === currentUserId && (
                             <Button
                               bg="#dc3545"
                               color="white"
@@ -755,16 +731,8 @@ const fetchProviders = async () => {
         onHire={handleHireProvider}
       />
 
-      {/* Direct Hire Modal */}
-      <DirectHireModal
-        isOpen={isDirectHireModalOpen}
-        onClose={() => {
-          setIsDirectHireModalOpen(false);
-          setSelectedProvider(null);
-        }}
-        provider={selectedProvider}
-        onSuccess={handleDirectHireSuccess}
-      />
+      <ProviderDetailModal isOpen={isProviderDetailModalOpen} onClose={() => { setIsProviderDetailModalOpen(false); setSelectedProvider(null); }} provider={selectedProvider} onHire={handleHireProvider} />
+      <DirectHireModal isOpen={isDirectHireModalOpen} onClose={() => { setIsDirectHireModalOpen(false); setSelectedProvider(null); }} provider={selectedProvider} onSuccess={handleDirectHireSuccess} />
     </Box>
   )
 }

@@ -1,200 +1,202 @@
 import { useState, useEffect } from 'react';
 import {
-  Box,
-  Heading,
-  VStack,
-  HStack,
-  Grid,
-  Text,
-  Button,
+  Box, Flex, Badge, Button, Text, Spinner, Heading
+  // REMOVED: Grid, GridItem, HStack, VStack, Tooltip (causing crash)
 } from '@chakra-ui/react';
+import { toast } from 'react-toastify'; 
+import { apiFetch } from '../../utils/tokenUtils'; 
 
-// Make sure this matches your backend address
-const API_BASE_URL = 'http://localhost:8080/api'; 
-
-const ServiceList = ({ items, showActions, onUpdateStatus }) => (
-  <VStack w="full" minW="700px">
-    <Grid
-      w="full"
-      templateColumns={showActions ? '2fr 1fr 1fr 2fr' : '2fr 1fr 1fr 1fr'}
-      gap={4}
-      px={4}
-      py={3}
-      borderBottom="2px solid"
-      borderColor="gray.600"
-    >
-      <Text fontWeight="bold" color="gray.400" textTransform="uppercase">Service Title</Text>
-      <Text fontWeight="bold" color="gray.400" textTransform="uppercase">Provider</Text>
-      <Text fontWeight="bold" color="gray.400" textTransform="uppercase">Category</Text>
-      {showActions && <Text fontWeight="bold" color="gray.400" textTransform="uppercase">Actions</Text>}
-    </Grid>
-
-    {items.length === 0 && <Text p={4} color="gray.400">No services in this list.</Text>}
-
-    {items.map((service) => (
-      <Grid
-        key={service.id || service._id} 
-        w="full"
-        templateColumns={showActions ? '2fr 1fr 1fr 2fr' : '2fr 1fr 1fr 1fr'}
-        gap={4}
-        px={4}
-        py={4}
-        borderRadius="md"
-        _hover={{ bg: '#2a2f4a' }}
-        color="white"
-        borderBottom="1px solid"
-        borderColor="gray.700"
-        alignItems="center" 
-      >
-        <Text fontWeight="medium">{service.title}</Text>
-        <Text color="gray.300">{service.providerName}</Text>
-        <Text color="gray.300">{service.category}</Text>
-        {showActions && (
-          <HStack spacing={2}>
-            <Button
-              size="xs"
-              bg="green.500"
-              color="white"
-              _hover={{ bg: 'green.600' }}
-              onClick={() => onUpdateStatus(service.id || service._id, 'approved')}
-            >
-              Approve
-            </Button>
-            <Button
-              size="xs"
-              bg="red.600"
-              color="white"
-              _hover={{ bg: 'red.700' }}
-              onClick={() => onUpdateStatus(service.id || service._id, 'rejected')}
-            >
-              Reject
-            </Button>
-          </HStack>
-        )}
-      </Grid>
-    ))}
-  </VStack>
+// Simple SVG Icon
+const AlertIcon = () => (
+  <svg 
+    width="24" 
+    height="24" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+    style={{ color: "#fc8181" }} 
+  >
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="12" y1="8" x2="12" y2="12"/>
+    <line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
 );
 
 export default function ContentManagement() {
-  const [services, setServices] = useState([]);
-  const [activeTab, setActiveTab] = useState('pending');
-  // Crash Fix 1: State is defined here
-  const [isLoading, setIsLoading] = useState(true);
+  const [reportedJobs, setReportedJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(null);
 
-   const fetchServices = async () => {
-    // Crash Fix 2: Changed 'setLoading' to 'setIsLoading'
-    setIsLoading(true); 
+  useEffect(() => {
+    fetchReportedContent();
+  }, []);
+
+  const fetchReportedContent = async () => {
+    setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/admin/content`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = await apiFetch('/admin/content/reported');
+      const data = await res.json();
       
-      if (response.status === 401 || response.status === 403) {
-         console.error("Unauthorized");
-         return;
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        setServices(data.data);
+      if (res.ok) {
+        setReportedJobs(data.jobs || []);
       } else {
-        console.error('Failed to fetch services:', data.message);
+        toast.error("Failed to load reported content");
       }
-    } catch (error) {
-      console.error('Error fetching content:', error);
+    } catch (err) {
+      console.error(err);
+      toast.error("Server connection error");
     } finally {
-      // Crash Fix 3: Changed 'setLoading' to 'setIsLoading'
-      setIsLoading(false); 
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchServices();
-  }, []);
+  const handleAction = async (jobId, action) => {
+    if (!window.confirm(action === 'delete' ? "Delete this job permanently?" : "Dismiss all reports?")) return;
 
-  const pendingServices = services.filter(s => s.status === 'pending');
-  const approvedServices = services.filter(s => s.status === 'open' || s.status === 'approved');
-
-  const handleUpdateStatus = async (id, newStatus) => {
-    if (!window.confirm(`Are you sure you want to ${newStatus} this posting?`)) return;
-
+    setActionLoading(jobId);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/admin/content/${id}/status`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
+      let endpoint = '';
+      let method = '';
 
-      const data = await response.json();
-
-      if (data.success) {
-        // CHANGED: Used alert instead of toast
-        alert(`Job ${newStatus} successfully`);
-        fetchServices();
-      } else {
-        alert(data.message || "Update failed");
+      if (action === 'delete') {
+        endpoint = `/admin/content/${jobId}`;
+        method = 'DELETE';
+      } else if (action === 'dismiss') {
+        endpoint = `/admin/content/${jobId}/dismiss`;
+        method = 'PUT';
       }
-    } catch (error) {
-      console.error(error);
-      alert("Server error");
+
+      const res = await apiFetch(endpoint, { method });
+      
+      if (res.ok) {
+        toast.success(action === 'delete' ? "Content Removed" : "Reports Dismissed");
+        setReportedJobs(prev => prev.filter(job => job._id !== jobId));
+      } else {
+        toast.error("Action failed");
+      }
+    } catch (err) {
+      toast.error("Server Error");
+    } finally {
+      setActionLoading(null);
     }
   };
 
   return (
-    <Box bg="#1a1f3a" p={6} borderRadius="lg" w="full">
-      <VStack align="start" spacing={6}>
-        <Heading as="h3" size="lg" color="white">
-          Content Management
-        </Heading>
+    <Box bg="#1a1f3a" p={6} borderRadius="xl" border="1px solid rgba(255,255,255,0.05)" minH="400px" w="full">
+      
+      {/* Header Section */}
+      <Flex mb={6} align="center" gap={3} borderBottom="1px solid rgba(255,255,255,0.1)" pb={4}>
+        <AlertIcon />
+        <Heading as="h3" size="lg" color="white">Moderation Queue</Heading>
+        {reportedJobs.length > 0 && (
+          <Badge colorScheme="red" borderRadius="full" px={2} fontSize="0.9em">
+            {reportedJobs.length} Pending
+          </Badge>
+        )}
+      </Flex>
 
-        <HStack spacing={4}>
-          <Button
-            bg={activeTab === 'pending' ? '#d97baa' : '#2a2f4a'}
-            color="white"
-            _hover={{ bg: activeTab === 'pending' ? '#c55a8f' : '#3a3f5a' }}
-            onClick={() => setActiveTab('pending')}
-          >
-            Pending Approval ({pendingServices.length})
-          </Button>
-          <Button
-            bg={activeTab === 'approved' ? '#d97baa' : '#2a2f4a'}
-            color="white"
-            _hover={{ bg: activeTab === 'approved' ? '#c55a8f' : '#3a3f5a' }}
-            onClick={() => setActiveTab('approved')}
-          >
-            All Approved ({approvedServices.length})
-          </Button>
-        </HStack>
-
-        <Box w="full" pt={4}>
-          {isLoading ? (
-             <Text color="white">Loading...</Text>
-          ) : (
-            <>
-              {activeTab === 'pending' && (
-                <ServiceList
-                  items={pendingServices}
-                  showActions={true}
-                  onUpdateStatus={handleUpdateStatus}
-                />
-              )}
-              {activeTab === 'approved' && (
-                <ServiceList
-                  items={approvedServices}
-                  showActions={false}
-                  onUpdateStatus={handleUpdateStatus}
-                />
-              )}
-            </>
-          )}
+      {/* Main Content Area */}
+      {loading ? (
+        <Flex justify="center" py={10}><Spinner color="#d97baa" size="xl" /></Flex>
+      ) : reportedJobs.length === 0 ? (
+        <Box p={10} textAlign="center" border="1px dashed" borderColor="gray.700" borderRadius="lg" bg="rgba(0,0,0,0.2)">
+          <Text fontSize="2xl" mb={2}>🛡️</Text>
+          <Text color="gray.300" fontWeight="bold">All Clean!</Text>
+          <Text color="gray.500" fontSize="sm">There are no flagged job postings at this time.</Text>
         </Box>
-      </VStack>
+      ) : (
+        <Box>
+          
+          {/* Table Header Row */}
+          <Flex bg="whiteAlpha.100" p={3} borderRadius="top-lg" mb={2}>
+            <Text flex="2" color="gray.400" fontWeight="bold" fontSize="sm">JOB DETAILS</Text>
+            <Text flex="1.5" color="gray.400" fontWeight="bold" fontSize="sm">POSTED BY</Text>
+            <Text flex="1.5" color="gray.400" fontWeight="bold" fontSize="sm">REASON</Text>
+            <Text flex="1" color="gray.400" fontWeight="bold" fontSize="sm" textAlign="right">ACTIONS</Text>
+          </Flex>
+
+          {/* List Items */}
+          <Box as="div"> 
+            {reportedJobs.map((job) => (
+              <Flex 
+                key={job._id} 
+                p={4} 
+                mb={2}
+                bg="whiteAlpha.50"
+                borderRadius="md"
+                align="center"
+                _hover={{ bg: 'whiteAlpha.100' }}
+              >
+                
+                {/* Job Title & Category */}
+                <Box flex="2">
+                  <Flex direction="column" gap={1}>
+                    <Text fontWeight="bold" color="white" fontSize="md">{job.title}</Text>
+                    <Box>
+                      <Badge colorScheme="purple" fontSize="xs">{job.category}</Badge>
+                    </Box>
+                    <Text fontSize="xs" color="gray.500">ID: {job._id.slice(-6)}</Text>
+                  </Flex>
+                </Box>
+
+                {/* Provider Info */}
+                <Box flex="1.5">
+                  <Text color="#d97baa" fontWeight="medium">
+                    {job.postedBy?.firstName} {job.postedBy?.lastName}
+                  </Text>
+                  <Text fontSize="xs" color="gray.500">{job.postedBy?.email}</Text>
+                </Box>
+
+                {/* Report Details */}
+                <Box flex="1.5">
+                   <Flex direction="column" gap={1}>
+                     <Box>
+                        <Badge colorScheme="orange" variant="solid">
+                          {job.reports.length} Flag{job.reports.length !== 1 ? 's' : ''}
+                        </Badge>
+                     </Box>
+                     <Text fontSize="sm" color="gray.300" fontStyle="italic" noOfLines={2}>
+                       "{job.reports[job.reports.length - 1]?.reason}"
+                     </Text>
+                   </Flex>
+                </Box>
+
+                {/* Action Buttons */}
+                <Box flex="1" textAlign="right">
+                  <Flex justify="flex-end" gap={2}>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      colorScheme="green"
+                      borderColor="green.600"
+                      color="green.400"
+                      _hover={{ bg: 'green.900' }}
+                      onClick={() => handleAction(job._id, 'dismiss')}
+                      isLoading={actionLoading === job._id}
+                    >
+                      ✓
+                    </Button>
+
+                    <Button 
+                      size="sm" 
+                      bg="red.500" 
+                      color="white"
+                      _hover={{ bg: 'red.600' }}
+                      onClick={() => handleAction(job._id, 'delete')}
+                      isLoading={actionLoading === job._id}
+                    >
+                      ✕
+                    </Button>
+                  </Flex>
+                </Box>
+              </Flex>
+            ))}
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 }

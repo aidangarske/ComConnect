@@ -21,9 +21,8 @@ import ReportsView from './pages/admin/ReportsView'
 import UserManagement from './pages/admin/UserManagement'
 import ContentManagement from './pages/admin/ContentManagement'
 import SupportTickets from './pages/admin/SupportTickets'
+import Support from './pages/Support'
   
-
-
 function App() {
   return (
     <ChakraProvider value={defaultSystem}>
@@ -41,9 +40,11 @@ function App() {
         <Route path="/hire/:jobId/:providerId" element={<HireProvider />} />
         <Route path="/ratings/submit/:jobId?/:userId?" element={<SubmitRating />} />
         <Route path="/ratings/:userId" element={<ViewRatings />} />
+        <Route path="/support" element={<Support />} />
+        <Route path="/tickets" element={<Support />} />
 
         <Route path="/admin" element={<AdminDashboard />}>
-          <Route index element={<ContentManagement />} />
+          <Route index element={<UserManagement />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="reports" element={<ReportsView />} />
           <Route path="settings" element={<AdminSettings />} />

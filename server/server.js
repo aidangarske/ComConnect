@@ -9,7 +9,7 @@ import { Server } from 'socket.io';
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
-
+import ticketRoutes from './routes/ticketRoutes.js';
 import Message from './models/Message.js';
 import Conversation from './models/Conversation.js';
 import authRoutes from './routes/authRoutes.js';
@@ -17,6 +17,7 @@ import userRoutes from './routes/userRoutes.js';
 import jobRoutes from './routes/jobRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 // Initialize Express app
 const app = express();
@@ -64,6 +65,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/tickets', ticketRoutes);
 
 io.on('connection', (socket) => {
   console.log('A user connected via WebSocket:', socket.id);
