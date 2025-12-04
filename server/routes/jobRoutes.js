@@ -165,6 +165,112 @@ router.post('/direct-hire', authenticate, authorize('seeker', 'admin'), async (r
   }
 });
 
+// Provider accepts a direct hire request
+router.put('/:id/accept-hire-request', authenticate, authorize('provider'), async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.id);
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    // Find the application for this provider
+    const application = job.applications.find(
+      app => app.providerId.toString() === req.user.id && app.isDirectHire === true
+    );
+
+    if (!application) {
+      return res.status(404).json({ error: 'No hire request found for you on this job' });
+    }
+
+    // Update application status to accepted
+    application.status = 'accepted';
+
+    // Set this provider as the selected provider
+    job.selectedProvider = req.user.id;
+    job.status = 'in_progress';
+
+    await job.save();
+
+    // Populate for response
+    let populatedJob = await Job.findById(job._id)
+      .populate('postedBy', 'username firstName lastName rating')
+      .populate('selectedProvider', 'username firstName lastName rating')
+      .lean();
+
+    populatedJob = await populateApplications(populatedJob);
+
+    // Emit socket events
+    const io = getIO(req);
+    if (io) {
+      io.emit('jobUpdated', { jobId: job._id, job: populatedJob });
+      io.emit('hireRequestAccepted', {
+        jobId: job._id,
+        providerId: req.user.id,
+        seekerId: job.postedBy
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Hire request accepted! Job is now in progress.',
+      job: populatedJob
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Error accepting hire request: ' + error.message });
+  }
+});
+
+// Provider rejects a direct hire request
+router.put('/:id/reject-hire-request', authenticate, authorize('provider'), async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.id);
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    // Find the application for this provider
+    const application = job.applications.find(
+      app => app.providerId.toString() === req.user.id && app.isDirectHire === true
+    );
+
+    if (!application) {
+      return res.status(404).json({ error: 'No hire request found for you on this job' });
+    }
+
+    // Update application status to rejected
+    application.status = 'rejected';
+
+    await job.save();
+
+    // Populate for response
+    let populatedJob = await Job.findById(job._id)
+      .populate('postedBy', 'username firstName lastName rating')
+      .populate('selectedProvider', 'username firstName lastName rating')
+      .lean();
+
+    populatedJob = await populateApplications(populatedJob);
+
+    // Emit socket events
+    const io = getIO(req);
+    if (io) {
+      io.emit('jobUpdated', { jobId: job._id, job: populatedJob });
+      io.emit('hireRequestRejected', {
+        jobId: job._id,
+        providerId: req.user.id,
+        seekerId: job.postedBy
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Hire request rejected.',
+      job: populatedJob
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Error rejecting hire request: ' + error.message });
+  }
+});
+
 router.get('/', async (req, res) => {
   try {
     const { category, status = 'open', sort = 'newest', limit = 20 } = req.query;
