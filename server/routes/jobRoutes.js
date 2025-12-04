@@ -187,7 +187,7 @@ router.put('/:id/accept-hire-request', authenticate, authorize('provider'), asyn
 
     // Set this provider as the selected provider
     job.selectedProvider = req.user.id;
-    job.status = 'in_progress';
+    job.status = 'in-progress';
 
     await job.save();
 

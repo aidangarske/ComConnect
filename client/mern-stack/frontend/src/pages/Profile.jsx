@@ -348,11 +348,11 @@ export default function Profile() {
         const currentUserId = decodedUser.id;
         
         // Check if this job belongs to the current user
-        const jobPosterId = typeof data.job.postedBy === 'object' 
+        const jobPosterId = (data.job.postedBy && typeof data.job.postedBy === 'object')
           ? data.job.postedBy._id 
           : data.job.postedBy;
         
-        if (jobPosterId === currentUserId) {
+        if (jobPosterId && jobPosterId === currentUserId) {
           // Update the job in the list
           setMyJobs(prevJobs => 
             prevJobs.map(job => 
@@ -1491,7 +1491,7 @@ export default function Profile() {
                             <HStack spacing={4}>
                               <Badge bg="#3a3f5e" color="white">{job.category}</Badge>
                               <Text color="#999" fontSize="sm">${job.budget}</Text>
-                              {typeof job.postedBy === 'object' && (
+                              {job.postedBy && typeof job.postedBy === 'object' && (
                                 <Text color="#aaa" fontSize="sm">
                                   Posted by: {job.postedBy.firstName} {job.postedBy.lastName}
                                 </Text>
@@ -1538,10 +1538,12 @@ export default function Profile() {
                                   color="white"
                                   _hover={{ bg: '#c55a8f' }}
                                   onClick={() => {
-                                    const seekerId = typeof job.postedBy === 'object'
+                                    const seekerId = (job.postedBy && typeof job.postedBy === 'object')
                                       ? job.postedBy._id || job.postedBy
                                       : job.postedBy;
-                                    navigate(`/ratings/submit/${job._id}/${seekerId}`);
+                                    if (seekerId) {
+                                      navigate(`/ratings/submit/${job._id}/${seekerId}`);
+                                    }
                                   }}
                                 >
                                   Rate Seeker
