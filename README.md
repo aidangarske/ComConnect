@@ -63,6 +63,34 @@
 
 ---
 
+## Quick Start
+
+### Local Development
+
+Run the automated setup script:
+
+```bash
+bash start-all.sh
+```
+
+This will:
+- Configure local environment variables automatically
+- Start backend (http://localhost:8080)
+- Start frontend (http://localhost:5173)
+- Open browser to the application
+
+For more details, see [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md)
+
+### Setup Instructions
+
+See [SETUP.md](SETUP.md) for detailed installation and configuration instructions.
+
+### Demo Accounts
+
+See [DEMO_ACCOUNTS.md](DEMO_ACCOUNTS.md) for test user credentials.
+
+---
+
 ## Summary
 
 ComConnect implements a secure, scalable MERN stack architecture to support verified local job listings and service connections. Its modular design allows future expansion into mobile platforms, payment processing, and AI-based recommendations.

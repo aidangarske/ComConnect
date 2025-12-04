@@ -23,9 +23,13 @@ import adminRoutes from './routes/adminRoutes.js';
 const app = express();
 
 const server = http.createServer(app);
+
+// Allow frontend URL from environment variable (for Render deployment)
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // Your frontend's port
+    origin: FRONTEND_URL,
     credentials: true,
     methods: ["GET", "POST"]
   }
@@ -33,7 +37,7 @@ const io = new Server(server, {
 
 // Middleware
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: FRONTEND_URL,
   credentials: true
 }));
 // Increase body size limit to handle base64 encoded images (20MB)
@@ -107,6 +111,24 @@ io.on('connection', (socket) => {
   });
 });
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.status(200).json({ 
+    message: 'ComConnect Backend API',
+    status: 'running',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      users: '/api/users',
+      jobs: '/api/jobs',
+      messages: '/api/messages',
+      reviews: '/api/reviews',
+      admin: '/api/admin',
+      tickets: '/api/tickets'
+    }
+  });
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({ message: 'ComConnect Backend is running! 🚀' });
@@ -130,7 +152,12 @@ const PORT = process.env.PORT || 8080;
 
 server.listen(PORT, () => {
   console.log(`🚀 ComConnect Backend running on http://localhost:${PORT}`);
-  console.log(`📊 MongoDB: ${process.env.MONGODB_URI || 'mongodb://localhost:2L7017/comconnect'}`);
+  if (process.env.MONGODB_URI) {
+    // Only show that MongoDB URI is set, don't log the actual connection string for security
+    console.log(`📊 MongoDB: Connected (URI configured)`);
+  } else {
+    console.log(`⚠️  MongoDB: No MONGODB_URI environment variable set - using default localhost`);
+  }
 });
 
 export default app;

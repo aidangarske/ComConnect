@@ -30,6 +30,28 @@ if [ ! -f "$ENV_FILE" ]; then
     fi
 fi
 
+# Setup frontend environment for local development
+FRONTEND_ENV_FILE="/home/aidangarske/ComConnect/client/mern-stack/frontend/.env.local"
+echo -e "${BLUE}Setting up local environment variables...${NC}"
+cat > "$FRONTEND_ENV_FILE" << 'EOF'
+# Local Development Environment Variables
+# These override production settings from Render
+VITE_API_URL=http://localhost:8080/api
+VITE_SOCKET_URL=http://localhost:8080
+EOF
+
+# Ensure backend has FRONTEND_URL set for local CORS
+if [ -f "$ENV_FILE" ]; then
+    if ! grep -q "FRONTEND_URL" "$ENV_FILE"; then
+        echo "" >> "$ENV_FILE"
+        echo "# Local Development - Frontend URL for CORS" >> "$ENV_FILE"
+        echo "FRONTEND_URL=http://localhost:5173" >> "$ENV_FILE"
+    fi
+fi
+
+echo -e "${GREEN}✅ Local environment configured${NC}"
+echo ""
+
 # Kill any existing processes on ports 5173, 5174, 5175, 8080
 echo -e "${BLUE}Cleaning up old processes...${NC}"
 pkill -f "npm run dev" 2>/dev/null
