@@ -907,7 +907,7 @@ export default function Profile() {
       {/* Main Content */}
       <Box py={8} px={8}>
         {activeTab === 'profile' && (
-          <VStack align="start" spacing={8} w="full" maxW="600px">
+          <VStack align="start" spacing={8} w="full" maxW="600px" mx="auto">
             <VStack align="start" spacing={4}>
               <Heading as="h1" size="2xl" color="white">
                 My Profile

@@ -70,7 +70,8 @@ export default function Messages() {
 
     setIsLoading(true);
 
-    fetch('http://localhost:8080/api/messages/conversations', {
+    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+    fetch(`${API_BASE}/messages/conversations`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
       .then(res => {
@@ -107,7 +108,8 @@ export default function Messages() {
     if (messages[selectedConversationId]) return;
 
     const token = getToken();
-    fetch(`http://localhost:8080/api/messages/${selectedConversationId}`, {
+    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+    fetch(`${API_BASE}/messages/${selectedConversationId}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
       .then(res => {
