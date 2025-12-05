@@ -1,9 +1,20 @@
-# ComConnect
+<p align="center">
+  <img src="https://raw.githubusercontent.com/aidangarske/ComConnect/usethisbranch/client/mern-stack/frontend/src/logo/COMCONNECT_Logo.png" 
+       alt="ComConnect Logo" 
+       width="200"/>
+</p>
+
+<h1 align="center">ComConnect</h1>
+
+<p align="center"><strong>Connecting local service seekers and providers safely and efficiently.</strong></p>
+
+<p align="center">
+  <a href="https://comconnect-frontend.onrender.com/"><strong>🌐 Live Website</strong></a>
+</p>
+
+---
 
 **Team:** Harrison Barrett, Damon Bun, Aidan Garske, Jose Garcia, Harjosh Gosal
-
- [Live Website](https://comconnect-frontend.onrender.com/) — Try ComConnect online!
-
 
 ## Project Summary
 
