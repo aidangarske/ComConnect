@@ -6,7 +6,7 @@ import { getToken } from '../utils/tokenUtils'
 import { jwtDecode } from 'jwt-decode'
 import comconnectLogo from "../logo/COMCONNECT_Logo.png"
 
-const API_URL = 'http://localhost:8080/api'
+import { API_URL } from '../config/api.js';
 
 export default function ViewRatings() {
   const navigate = useNavigate()

@@ -11,7 +11,7 @@ import { getSocket } from '../../utils/socket';
 import comconnectLogo from "../../logo/COMCONNECT_Logo.png";
 import exampleProfilepic from "../../profile_picture/OIP.jpg";
 
-const API_URL = 'http://localhost:8080/api';
+import { API_URL } from '../../config/api.js';
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
   if (!lat1 || !lon1 || !lat2 || !lon2) return null;
@@ -630,8 +630,8 @@ export default function ServiceProviderDashboard() {
                 <VStack spacing={3} w="full" align="stretch">
                   {hireRequests.map((job) => {
                     const seekerName = job.postedBy 
-                      ? `${job.postedBy.firstName} ${job.postedBy.lastName}`.trim() || job.postedBy.username
-                      : job.posterName || 'Unknown Seeker';
+                      ? (`${job.postedBy.firstName || ''} ${job.postedBy.lastName || ''}`.trim() || job.postedBy.username || 'Unknown Seeker')
+                      : (job.posterName || 'Unknown Seeker');
                     return (
                       <Box
                         key={job._id}

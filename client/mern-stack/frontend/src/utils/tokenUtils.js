@@ -39,6 +39,9 @@ export const removeToken = () => {
 export const apiFetch = async (endpoint, options = {}) => {
   const token = getToken();
   
+  // Import API_URL from config
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+  
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers
@@ -48,7 +51,7 @@ export const apiFetch = async (endpoint, options = {}) => {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`http://localhost:8080/api${endpoint}`, {
+  const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     headers
   });

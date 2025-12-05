@@ -14,7 +14,7 @@ import {
   Spinner,
 } from '@chakra-ui/react';
 
-const API_BASE_URL = 'http://localhost:8080/api'; // Your backend URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 // Helper function for badge styles
 const getStatusStyles = (user) => {

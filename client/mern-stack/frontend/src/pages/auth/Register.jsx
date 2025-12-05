@@ -5,7 +5,7 @@ import { Box, VStack, HStack, Input, Button, Text, Heading, Image } from '@chakr
 
 import comconnectLogo from "../../logo/COMCONNECT_Logo.png";
 
-const API_URL = 'http://localhost:8080/api';
+import { API_URL } from '../../config/api.js';
 
 export default function Register() {
   const navigate = useNavigate()

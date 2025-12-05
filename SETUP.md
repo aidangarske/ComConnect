@@ -39,10 +39,6 @@ Seeker Account:
 Provider Account:
   Email: provider@comconnect.com
   Password: provider123
-
-Admin Account:
-  Email: admin@comconnect.com
-  Password: admin123
 ```
 
 ## Environment Setup (First Time Only)

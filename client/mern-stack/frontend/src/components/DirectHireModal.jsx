@@ -13,7 +13,7 @@ import {
 import { toast } from 'react-toastify';
 import { getToken } from '../utils/tokenUtils';
 
-const API_URL = 'http://localhost:8080/api';
+import { API_URL } from '../config/api.js';
 
 const categories = [
   'manual labor',

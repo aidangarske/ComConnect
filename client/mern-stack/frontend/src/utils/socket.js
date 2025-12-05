@@ -3,12 +3,13 @@
  * Reuse a single socket instance across the app to avoid multiple connections
  */
 import { io } from 'socket.io-client';
+import { SOCKET_URL } from '../config/api.js';
 
 let socketInstance = null;
 
 export const getSocket = () => {
   if (!socketInstance) {
-    socketInstance = io('http://localhost:8080', {
+    socketInstance = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1000,

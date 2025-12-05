@@ -7,7 +7,6 @@ import {
   Text,
   Button,
   Heading,
-  Image,
   Badge,
   Spinner
 } from '@chakra-ui/react';
@@ -16,7 +15,7 @@ import { getToken } from '../utils/tokenUtils';
 import comconnectLogo from '../logo/COMCONNECT_Logo.png';
 import exampleProfilepic from '../profile_picture/OIP.jpg';
 
-const API_URL = 'http://localhost:8080/api';
+import { API_URL } from '../config/api.js';
 
 export default function HireProvider() {
   const navigate = useNavigate();
@@ -153,7 +152,8 @@ export default function HireProvider() {
       {/* Header */}
       <Box bg="white" borderBottom="1px solid #1a1f3a" py={4} px={8}>
         <HStack justify="space-between" align="center">
-          <Image
+          <Box
+            as="img"
             src={comconnectLogo}
             alt="ComConnect"
             h="80px"

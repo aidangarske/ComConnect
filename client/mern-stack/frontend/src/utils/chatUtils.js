@@ -1,5 +1,5 @@
 // Assumes the API is running on port 8080
-const API_URL = 'http://localhost:8080/api/messages/start';
+import { API_URL } from '../config/api.js';
 
 /**
  * Finds an existing conversation or creates a new one with a recipient ID.

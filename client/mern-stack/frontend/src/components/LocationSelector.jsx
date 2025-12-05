@@ -13,6 +13,7 @@ import {
   HStack
 } from '@chakra-ui/react';
 import { toast } from 'react-toastify';
+import { API_URL } from '../config/api.js';
 
 // --- CUSTOM MAP STYLE (Dark Mode to match ComConnect) ---
 const darkMapStyle = [
@@ -122,7 +123,7 @@ export default function LocationSelector({ onLocationSave }) {
   const updateBackendLocation = async (lat, lng, address) => {
     try {
       const token = localStorage.getItem('token'); 
-      const response = await fetch('http://localhost:8080/api/users/profile/location', {
+      const response = await fetch(`${API_URL}/users/profile/location`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -17,7 +17,7 @@ import CompleteJobModal from './CompleteJobModal';
 import { getSocket } from '../utils/socket';
 import ReportJobButton from './ReportJobButton';
 
-const API_URL = 'http://localhost:8080/api';
+import { API_URL } from '../config/api.js';
 
 export default function JobDetailModal({ isOpen, onClose, jobId }) {
   const navigate = useNavigate();
@@ -175,22 +175,14 @@ export default function JobDetailModal({ isOpen, onClose, jobId }) {
       display="flex"
       alignItems="center"
       justifyContent="center"
+      bg="blackAlpha.600"
+      backdropFilter="blur(4px)"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
         }
       }}
     >
-      {/* Overlay */}
-      <Box
-        position="absolute"
-        top="0"
-        left="0"
-        right="0"
-        bottom="0"
-        bg="blackAlpha.600"
-        backdropFilter="blur(4px)"
-      />
 
       {/* Modal Content */}
       <Box
