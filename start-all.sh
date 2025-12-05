@@ -7,6 +7,9 @@ echo "║           ComConnect - Full Stack Startup                 ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo ""
 
+# Get the directory where this script is located
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+
 # Colors
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -15,14 +18,14 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 # Check if .env exists
-ENV_FILE="/home/aidangarske/ComConnect/server/.env"
+ENV_FILE="$SCRIPT_DIR/server/.env"
 
 if [ ! -f "$ENV_FILE" ]; then
     echo -e "${YELLOW}⚠️  MongoDB not configured yet!${NC}"
     echo ""
     echo -e "${BLUE}Running MongoDB Atlas setup...${NC}"
     echo ""
-    bash /home/aidangarske/ComConnect/setup-mongodb.sh
+    bash "$SCRIPT_DIR/setup-mongodb.sh"
     
     if [ ! -f "$ENV_FILE" ]; then
         echo -e "${RED}❌ MongoDB setup failed. Please try again.${NC}"
@@ -31,7 +34,7 @@ if [ ! -f "$ENV_FILE" ]; then
 fi
 
 # Setup frontend environment for local development
-FRONTEND_ENV_FILE="/home/aidangarske/ComConnect/client/mern-stack/frontend/.env.local"
+FRONTEND_ENV_FILE="$SCRIPT_DIR/client/mern-stack/frontend/.env.local"
 echo -e "${BLUE}Setting up local environment variables...${NC}"
 cat > "$FRONTEND_ENV_FILE" << 'EOF'
 # Local Development Environment Variables
@@ -64,7 +67,7 @@ echo ""
 
 # Start Backend
 echo -e "${YELLOW}Starting Backend (Node.js/Express)...${NC}"
-cd /home/aidangarske/ComConnect/server
+cd "$SCRIPT_DIR/server"
 npm run dev > /tmp/backend.log 2>&1 &
 BACKEND_PID=$!
 echo -e "${GREEN}✅ Backend started (PID: $BACKEND_PID)${NC}"
@@ -72,7 +75,7 @@ sleep 3
 
 # Start Frontend
 echo -e "${YELLOW}Starting Frontend (React/Vite)...${NC}"
-cd /home/aidangarske/ComConnect/client/mern-stack/frontend
+cd "$SCRIPT_DIR/client/mern-stack/frontend"
 npm run dev > /tmp/frontend.log 2>&1 &
 FRONTEND_PID=$!
 echo -e "${GREEN}✅ Frontend started (PID: $FRONTEND_PID)${NC}"
