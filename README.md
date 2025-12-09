@@ -1,8 +1,20 @@
-# ComConnect
+<p align="center">
+  <img src="https://raw.githubusercontent.com/aidangarske/ComConnect/usethisbranch/client/mern-stack/frontend/src/logo/COMCONNECT_Logo.png" 
+       alt="ComConnect Logo" 
+       width="200"/>
+</p>
 
-**Team:** Harrison Barrett, Damon Bun, Aidan Garske, Jose Garcia, Harjosh Gosal
+<h1 align="center">ComConnect</h1>
+
+<p align="center"><strong>Connecting local service seekers and providers safely and efficiently.</strong></p>
+
+<p align="center">
+  <a href="https://comconnect-frontend.onrender.com/"><strong>🌐 Live Website</strong></a>
+</p>
 
 ---
+
+**Team:** Harrison Barrett, Damon Bun, Aidan Garske, Jose Garcia, Harjosh Gosal
 
 ## Project Summary
 
@@ -60,6 +72,34 @@
 * IDE: Visual Studio Code
 * Collaboration: GitHub, Discord, Kanban workflow
 * Testing: Jest for unit testing, Postman for API validation
+
+---
+
+## Quick Start
+
+### Local Development
+
+Run the automated setup script:
+
+```bash
+bash start-all.sh
+```
+
+This will:
+- Configure local environment variables automatically
+- Start backend (http://localhost:8080)
+- Start frontend (http://localhost:5173)
+- Open browser to the application
+
+For more details, see [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md)
+
+### Setup Instructions
+
+See [SETUP.md](SETUP.md) for detailed installation and configuration instructions.
+
+### Demo Accounts
+
+See [DEMO_ACCOUNTS.md](DEMO_ACCOUNTS.md) for test user credentials.
 
 ---
 

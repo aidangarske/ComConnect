@@ -16,13 +16,6 @@ Password: provider123
 ```
 **Login → Dashboard:** /dashboard-provider
 
-### 👨‍💼 Admin
-```
-Email: admin@comconnect.com
-Password: admin123
-```
-**Login → Dashboard:** /admin
-
 ## How to Use
 
 1. Start the app: `./start-all.sh` or manually start both servers
